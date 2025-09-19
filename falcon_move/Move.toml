@@ -7,4 +7,4 @@ edition = "2024.beta"
 Sui = { git = "https://github.com/MystenLabs/sui.git", subdir = "crates/sui-framework/packages/sui-framework", rev = "framework/testnet" }
 
 [addresses]
-falcon_move = "0x0"
+falcon_move = "0x7f2560767779be45e6031df07546cd79295992dfe2e3a074bd537837fd82d998"
