@@ -1,11 +1,24 @@
+// src/pages/StartPage.tsx
 import React from 'react';
 import UnderWaterScene from '../scenes/UnderWaterScene';
+import { HybridWallet } from '../lib/HybridWallet';
+
 
 interface StartPageProps {
   onStart: () => void;
 }
 
+
 export const StartPage: React.FC<StartPageProps> = ({ onStart }) => {
+  const handleStart = () => {
+    const wallet = new HybridWallet();
+    wallet.init(); // 🔥 localStorage에 falcon 키 저장
+    console.log("✅ Wallet initialized:", wallet);
+
+    // TODO: 이후 페이지 전환이나 App 상태 업데이트 연결 가능
+    onStart(); 
+  };
+
   return (
     <UnderWaterScene>
       {/* Centered Container with Logo, Subtitle, and Button */}
@@ -57,7 +70,7 @@ export const StartPage: React.FC<StartPageProps> = ({ onStart }) => {
 
         {/* Start Button */}
         <button
-          onClick={onStart}
+          onClick={handleStart}
           style={{
             background: 'rgba(32, 178, 170, 0.7)',
             border: '3px solid #40E0D0',
@@ -67,7 +80,7 @@ export const StartPage: React.FC<StartPageProps> = ({ onStart }) => {
             fontFamily: 'monospace',
             fontWeight: 'bold',
             cursor: 'pointer',
-            borderRadius: '0px', // Pixel art style - no border radius
+            borderRadius: '0px', // Pixel art style
             textTransform: 'uppercase',
             letterSpacing: '0.1em',
             transition: 'all 0.2s ease',
@@ -107,14 +120,14 @@ export const StartPage: React.FC<StartPageProps> = ({ onStart }) => {
               0 0 10px rgba(224, 255, 255, 0.8),
               0 0 20px rgba(64, 224, 208, 0.6),
               0 0 30px rgba(32, 178, 170, 0.4);
-            transform: translateY(0px); /* ✅ 중앙 정렬 유지 */
+            transform: translateY(0px);
           }
           50% {
             text-shadow:
               0 0 15px rgba(224, 255, 255, 1),
               0 0 25px rgba(64, 224, 208, 0.8),
               0 0 35px rgba(32, 178, 170, 0.6);
-            transform: translateY(-5px); /* ✅ Y축만 흔들기 */
+            transform: translateY(-5px);
           }
         }
 

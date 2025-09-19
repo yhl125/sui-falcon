@@ -1,20 +1,20 @@
-import { useState } from 'react';
-import StartPage from './pages/StartPage';
-import WalletPage from './pages/WalletPage';
+// src/App.tsx
+import React, { useState } from "react";
+import StartPage from "./pages/StartPage";
+import WalletUI from "./components/WalletUI";
 
 function App() {
-  const [currentPage, setCurrentPage] = useState<'start' | 'wallet'>('start');
-
-  const handleStart = () => {
-    setCurrentPage('wallet');
-  };
+  const [started, setStarted] = useState(false);
 
   return (
     <>
-      {currentPage === 'start' && <StartPage onStart={handleStart} />}
-      {currentPage === 'wallet' && <WalletPage />}
+      {!started ? (
+        <StartPage onStart={() => setStarted(true)} />
+      ) : (
+        <WalletUI />
+      )}
     </>
   );
 }
 
-export default App
+export default App;
