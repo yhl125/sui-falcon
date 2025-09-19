@@ -1,4 +1,4 @@
-module falcon_verify::falcon512 {
+module falcon_move::falcon512 {
     use sui::hash::keccak256;
 
     // ==============================
