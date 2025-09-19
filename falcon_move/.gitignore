@@ -1,0 +1,28 @@
+# Sui Move build artifacts
+/build/
+*.mv
+*.bcs
+*.exp
+
+# Sui framework packages (if pulled as submodules or copied)
+**/Move.toml.lock
+
+# Sui CLI artifacts (if using local move test or dev mode)
+.sui/
+
+# Temporary files / system files
+*.log
+*.tmp
+*.swp
+*.DS_Store
+Thumbs.db
+
+# Rust-related (if you use Rust for offchain or tests)
+target/
+Cargo.lock
+
+# Node.js frontend (if integrated)
+node_modules/
+dist/
+.env
+.env.local
