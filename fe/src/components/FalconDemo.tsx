@@ -14,7 +14,7 @@ export const FalconDemo: React.FC = () => {
   } = useFalcon();
 
   const [keys, setKeys] = useState<FalconKeys | null>(null);
-  const [message, setMessage] = useState('My name is Renaud from ZKNOX!!!!');
+  const [message, setMessage] = useState('We are SuiQ!');
   const [signature, setSignature] = useState<string>('');
   const [verificationResult, setVerificationResult] = useState<boolean | null>(null);
   const [moveData, setMoveData] = useState<MoveCompatibleData | null>(null);
@@ -103,8 +103,15 @@ export const FalconDemo: React.FC = () => {
     if (!moveData) return;
 
     // Expose data to window for console access
-    (window as any).falconMoveData = moveData;
-    (window as any).falconMessage = message;
+    // Type-safe window extension for debugging
+    interface WindowWithFalconData extends Window {
+      falconMoveData?: MoveCompatibleData;
+      falconMessage?: string;
+    }
+
+    const extendedWindow = window as WindowWithFalconData;
+    extendedWindow.falconMoveData = moveData;
+    extendedWindow.falconMessage = message;
 
     console.log('=== FE(브라우저)에서 실행된 형식 비교 ===');
     console.log('Data exposed to window.falconMoveData');

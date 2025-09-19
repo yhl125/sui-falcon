@@ -74,6 +74,7 @@ export const useFalcon = () => {
 
       // 디렉토리 생성
       try {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (pyodide.FS as any).mkdir('/polyntt');
       } catch (e) {
         console.log('Directory already exists or creation failed:', e);
