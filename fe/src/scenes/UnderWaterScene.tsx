@@ -58,7 +58,7 @@ export const UnderWaterScene: React.FC<UnderWaterSceneProps> = ({ children }) =>
       bubbles.push({
         x: Math.random() * width,
         y: height + Math.random() * 200, // Start below screen
-        size: Math.random() * 8 + 2,
+        size: Math.random() * 13 + 3,
         speed: Math.random() * 0.5 + 0.3,
         opacity: Math.random() * 0.6 + 0.4,
         wobble: Math.random() * Math.PI * 2
@@ -224,9 +224,6 @@ export const UnderWaterScene: React.FC<UnderWaterSceneProps> = ({ children }) =>
 
     // Clear canvas and draw ocean gradient
     drawOceanGradient(ctx, canvas.width, canvas.height);
-
-    // Draw caustic light rays
-    drawCaustics(ctx, canvas.width, canvas.height, timestamp);
 
     // Draw floating bubbles
     drawBubbles(ctx, canvas.width, canvas.height, deltaTime);
