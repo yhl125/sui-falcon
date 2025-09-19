@@ -1,0 +1,58 @@
+/* Beach Animation Styles */
+body {
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  background: #000;
+}
+
+canvas {
+  image-rendering: -moz-crisp-edges;
+  image-rendering: -webkit-crisp-edges;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+}
+
+.wallet-ui-placeholder {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  user-select: none;
+  pointer-events: auto;
+}
+
+.wallet-ui-placeholder h3 {
+  font-weight: 600;
+  letter-spacing: 0.5px;
+}
+
+.wallet-ui-placeholder p {
+  font-size: 0.9rem;
+  line-height: 1.4;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .wallet-ui-placeholder {
+    min-width: 280px;
+    padding: 1.5rem;
+  }
+
+  .wallet-ui-placeholder h3 {
+    font-size: 1.2rem;
+  }
+
+  .wallet-ui-placeholder p {
+    font-size: 0.8rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .wallet-ui-placeholder {
+    min-width: 260px;
+    padding: 1rem;
+  }
+
+  .wallet-ui-placeholder h3 {
+    font-size: 1.1rem;
+    margin-bottom: 0.8rem;
+  }
+}
