@@ -1,12 +1,13 @@
 import React, { useState } from 'react';
-import { 
-  ConnectButton, 
-  useCurrentAccount, 
+import {
+  ConnectButton,
+  useCurrentAccount,
   useSuiClientQuery,
-  useSignAndExecuteTransaction 
+  useSignAndExecuteTransaction
 } from '@mysten/dapp-kit';
 import { Transaction } from '@mysten/sui/transactions';
 import { MIST_PER_SUI } from '@mysten/sui/utils';
+import { WalletHeader, WalletBalance, WalletActions, TransferModal } from './wallet';
 
 interface WalletUIProps {
   // Optional props for additional customization
@@ -105,7 +106,7 @@ export const WalletUI: React.FC<WalletUIProps> = ({
           Connect your Sui wallet to start using the Falcon Wallet
         </p>
         <ConnectButton />
-        
+
         {/* CSS keyframes for floating animation */}
         <style>{`
           @keyframes walletFloat {
@@ -142,131 +143,9 @@ export const WalletUI: React.FC<WalletUIProps> = ({
           animation: 'walletFloat 4s ease-in-out infinite'
         }}
       >
-        {/* Header Row */}
-        <div style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          marginBottom: '2rem',
-          paddingBottom: '1rem',
-          borderBottom: '1px solid rgba(0, 0, 0, 0.1)'
-        }}>
-          <div style={{
-            fontSize: '0.9rem',
-            color: '#666',
-            fontWeight: '500'
-          }}>
-            <span style={{
-              fontSize: '0.8rem',
-              textTransform: 'uppercase',
-              letterSpacing: '0.5px',
-              marginBottom: '0.25rem',
-              display: 'block'
-            }}>
-              Connected Account
-            </span>
-            <span style={{
-              fontFamily: 'monospace',
-              fontSize: '1rem',
-              color: '#333'
-            }}>
-              {`${currentAccount.address.slice(0, 6)}...${currentAccount.address.slice(-4)}`}
-            </span>
-          </div>
-          <div style={{ width: '100px' }}>
-            <ConnectButton />
-          </div>
-        </div>
-
-        {/* Balance Section */}
-        <div style={{
-          textAlign: 'center',
-          marginBottom: '2.5rem'
-        }}>
-          <div style={{
-            display: 'flex',
-            alignItems: 'baseline',
-            justifyContent: 'center',
-            gap: '0.5rem',
-            marginBottom: '0.5rem'
-          }}>
-            <span style={{
-              fontSize: '3rem',
-              fontWeight: '700',
-              color: '#0099cc',
-              lineHeight: '1'
-            }}>
-              {suiBalance.toFixed(2)}
-            </span>
-            <span style={{
-              fontSize: '1.2rem',
-              fontWeight: '500',
-              color: '#666',
-              textTransform: 'uppercase',
-              letterSpacing: '1px'
-            }}>
-              sui
-            </span>
-          </div>
-        </div>
-
-        {/* Action Buttons */}
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: '1fr 1fr',
-          gap: '1rem'
-        }}>
-          <button
-            onClick={onDeposit}
-            style={{
-              background: 'transparent',
-              color: '#0099cc',
-              border: '2px solid #0099cc',
-              padding: '1rem 1.5rem',
-              borderRadius: '12px',
-              fontSize: '1rem',
-              fontWeight: '600',
-              cursor: 'pointer',
-              transition: 'all 0.2s ease'
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.background = 'rgba(0, 153, 204, 0.1)';
-              e.currentTarget.style.transform = 'translateY(-1px)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.background = 'transparent';
-              e.currentTarget.style.transform = 'translateY(0)';
-            }}
-          >
-            Deposit
-          </button>
-
-          <button
-            onClick={handleSend}
-            style={{
-              background: 'linear-gradient(135deg, #0099cc 0%, #0077aa 100%)',
-              color: 'white',
-              border: 'none',
-              padding: '1rem 1.5rem',
-              borderRadius: '12px',
-              fontSize: '1rem',
-              fontWeight: '600',
-              cursor: 'pointer',
-              transition: 'all 0.2s ease',
-              boxShadow: '0 4px 12px rgba(0, 153, 204, 0.3)'
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.transform = 'translateY(-1px)';
-              e.currentTarget.style.boxShadow = '0 6px 16px rgba(0, 153, 204, 0.4)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.transform = 'translateY(0)';
-              e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 153, 204, 0.3)';
-            }}
-          >
-            Send
-          </button>
-        </div>
+        <WalletHeader address={currentAccount.address} />
+        <WalletBalance balance={suiBalance} />
+        <WalletActions onDeposit={onDeposit} onSend={handleSend} />
 
         {/* CSS keyframes for floating animation */}
         <style>{`
@@ -281,109 +160,15 @@ export const WalletUI: React.FC<WalletUIProps> = ({
         `}</style>
       </div>
 
-      {/* Transfer Modal */}
-      {isTransferModalOpen && (
-        <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          backgroundColor: 'rgba(0, 0, 0, 0.5)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 1000
-        }}>
-          <div style={{
-            background: 'white',
-            padding: '2rem',
-            borderRadius: '20px',
-            width: '90%',
-            maxWidth: '400px',
-            boxShadow: '0 20px 60px rgba(0, 0, 0, 0.3)'
-          }}>
-            <h3 style={{ marginBottom: '1.5rem', color: '#333', textAlign: 'center' }}>
-              Send SUI
-            </h3>
-            
-            <div style={{ marginBottom: '1rem' }}>
-              <label style={{ display: 'block', marginBottom: '0.5rem', color: '#666' }}>
-                Recipient Address
-              </label>
-              <input
-                type="text"
-                value={recipient}
-                onChange={(e) => setRecipient(e.target.value)}
-                placeholder="0x..."
-                style={{
-                  width: '100%',
-                  padding: '0.75rem',
-                  border: '2px solid #e0e0e0',
-                  borderRadius: '8px',
-                  fontSize: '0.9rem',
-                  fontFamily: 'monospace'
-                }}
-              />
-            </div>
-
-            <div style={{ marginBottom: '2rem' }}>
-              <label style={{ display: 'block', marginBottom: '0.5rem', color: '#666' }}>
-                Amount (SUI)
-              </label>
-              <input
-                type="number"
-                value={amount}
-                onChange={(e) => setAmount(e.target.value)}
-                placeholder="0.1"
-                step="0.1"
-                min="0"
-                style={{
-                  width: '100%',
-                  padding: '0.75rem',
-                  border: '2px solid #e0e0e0',
-                  borderRadius: '8px',
-                  fontSize: '0.9rem'
-                }}
-              />
-            </div>
-
-            <div style={{
-              display: 'grid',
-              gridTemplateColumns: '1fr 1fr',
-              gap: '1rem'
-            }}>
-              <button
-                onClick={() => setIsTransferModalOpen(false)}
-                style={{
-                  background: 'transparent',
-                  color: '#666',
-                  border: '2px solid #e0e0e0',
-                  padding: '0.75rem',
-                  borderRadius: '8px',
-                  cursor: 'pointer'
-                }}
-              >
-                Cancel
-              </button>
-              <button
-                onClick={executeTransfer}
-                disabled={!recipient || !amount}
-                style={{
-                  background: recipient && amount ? '#0099cc' : '#ccc',
-                  color: 'white',
-                  border: 'none',
-                  padding: '0.75rem',
-                  borderRadius: '8px',
-                  cursor: recipient && amount ? 'pointer' : 'not-allowed'
-                }}
-              >
-                Send
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <TransferModal
+        isOpen={isTransferModalOpen}
+        recipient={recipient}
+        amount={amount}
+        onRecipientChange={setRecipient}
+        onAmountChange={setAmount}
+        onConfirm={executeTransfer}
+        onCancel={() => setIsTransferModalOpen(false)}
+      />
     </>
   );
 };
