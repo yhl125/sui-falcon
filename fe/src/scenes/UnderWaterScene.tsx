@@ -1,5 +1,4 @@
-import React, { useRef, useEffect, useCallback, useState } from 'react';
-import WalletUI from './WalletUI';
+import React, { useRef, useEffect, useCallback } from 'react';
 
 interface Bubble {
   x: number;
@@ -20,11 +19,14 @@ interface CausticRay {
 }
 
 
-export const UnderWaterScene: React.FC = () => {
+interface UnderWaterSceneProps {
+  children?: React.ReactNode;
+}
+
+export const UnderWaterScene: React.FC<UnderWaterSceneProps> = ({ children }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animationFrameRef = useRef<number | undefined>(undefined);
   const lastTimeRef = useRef<number>(0);
-  const [showWalletUI, setShowWalletUI] = useState(false);
 
   // Animation state
   const bubblesRef = useRef<Bubble[]>([]);
@@ -206,81 +208,7 @@ export const UnderWaterScene: React.FC = () => {
     ctx.restore();
   }, [colors]);
 
-  // Draw floating buttons
-  const drawFloatingButtons = useCallback((ctx: CanvasRenderingContext2D, width: number, height: number, time: number) => {
-    const centerX = width / 2;
-    const centerY = height / 2 + 80;
 
-    const buttons = [
-      {
-        text: 'Create Wallet',
-        x: centerX - 110,
-        y: centerY,
-        width: 220,
-        height: 50,
-        floatOffset: Math.sin(time * 0.001) * 8
-      },
-      {
-        text: 'Login',
-        x: centerX - 110,
-        y: centerY + 70,
-        width: 220,
-        height: 50,
-        floatOffset: Math.sin(time * 0.001 + Math.PI / 3) * 8
-      }
-    ];
-
-    buttons.forEach((button) => {
-      ctx.save();
-
-      const buttonY = button.y + button.floatOffset;
-
-      // Button shadow
-      ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
-      ctx.fillRect(button.x + 3, buttonY + 3, button.width, button.height);
-
-      // Button background
-      ctx.fillStyle = colors.buttonBg;
-      ctx.fillRect(button.x, buttonY, button.width, button.height);
-
-      // Button border
-      ctx.strokeStyle = colors.buttonBorder;
-      ctx.lineWidth = 2;
-      ctx.strokeRect(button.x, buttonY, button.width, button.height);
-
-      // Button text
-      ctx.fillStyle = colors.buttonText;
-      ctx.font = 'bold 16px monospace';
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillText(button.text, button.x + button.width / 2, buttonY + button.height / 2);
-
-      ctx.restore();
-    });
-  }, [colors]);
-
-  // Handle canvas clicks for buttons
-  const handleCanvasClick = useCallback((event: MouseEvent) => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-
-    const rect = canvas.getBoundingClientRect();
-    const x = event.clientX - rect.left;
-    const y = event.clientY - rect.top;
-
-    const centerX = canvas.width / 2;
-    const centerY = canvas.height / 2 + 80;
-
-    // Check Create Wallet button
-    if (x >= centerX - 110 && x <= centerX + 110 && y >= centerY && y <= centerY + 50) {
-      setShowWalletUI(true);
-    }
-
-    // Check Login button
-    if (x >= centerX - 110 && x <= centerX + 110 && y >= centerY + 70 && y <= centerY + 120) {
-      setShowWalletUI(true);
-    }
-  }, []);
 
   // Main animation loop
   const animate = useCallback((timestamp: number) => {
@@ -303,14 +231,8 @@ export const UnderWaterScene: React.FC = () => {
     // Draw floating bubbles
     drawBubbles(ctx, canvas.width, canvas.height, deltaTime);
 
-    // Draw floating SuiQ text
-    drawFloatingText(ctx, canvas.width, canvas.height, timestamp);
-
-    // Draw floating buttons
-    drawFloatingButtons(ctx, canvas.width, canvas.height, timestamp);
-
     animationFrameRef.current = requestAnimationFrame(animate);
-  }, [drawOceanGradient, drawCaustics, drawBubbles, drawFloatingText, drawFloatingButtons]);
+  }, [drawOceanGradient, drawCaustics, drawBubbles, drawFloatingText]);
 
   // Canvas setup and initialization
   useEffect(() => {
@@ -334,31 +256,24 @@ export const UnderWaterScene: React.FC = () => {
 
     resizeCanvas();
     window.addEventListener('resize', resizeCanvas);
-    canvas.addEventListener('click', handleCanvasClick);
 
     // Start animation
     animationFrameRef.current = requestAnimationFrame(animate);
 
     return () => {
       window.removeEventListener('resize', resizeCanvas);
-      canvas.removeEventListener('click', handleCanvasClick);
       if (animationFrameRef.current) {
         cancelAnimationFrame(animationFrameRef.current);
       }
     };
-  }, [animate, initializeBubbles, initializeCaustics, handleCanvasClick]);
-
-  if (showWalletUI) {
-    return <WalletUI visible={true} opacity={1} />;
-  }
+  }, [animate, initializeBubbles, initializeCaustics]);
 
   return (
     <div style={{
       position: 'relative',
       width: '100vw',
       height: '100vh',
-      overflow: 'hidden',
-      cursor: 'pointer'
+      overflow: 'hidden'
     }}>
       <canvas
         ref={canvasRef}
@@ -367,6 +282,7 @@ export const UnderWaterScene: React.FC = () => {
           imageRendering: 'pixelated'
         }}
       />
+      {children}
     </div>
   );
 };
