@@ -1,7 +1,7 @@
-import UnderWaterScene from './components/UnderWaterScene'
+import { FalconDemo } from './components/FalconDemo'
 
 function App() {
-  return <UnderWaterScene />
+  return <FalconDemo />
 }
 
 export default App
