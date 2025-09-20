@@ -30,6 +30,10 @@ interface HybridWalletState {
   sendPayment: (recipient: string, amount: bigint) => Promise<void>;
   // 하이브리드 지갑 로드 함수
   loadHybridWalletForAccount: (accoutAddress: string) => Promise<void>;
+  // 하이브리드 지갑 예치 함수
+  deposit: (amount: bigint) => Promise<void>;
+
+  
 }
 
 const HybridWalletContext = createContext<HybridWalletState | undefined>(
@@ -283,7 +287,7 @@ export const HybridWalletProvider: React.FC<HybridWalletProviderProps> = ({
     }
   };
 
-  // 하이브리드 지갑 예치
+  // 하이브리드 지갑 예치 (SUI)
 const deposit = async (amount: bigint) => {
   if (!currentAccount?.address || !hybridWalletId) {
     throw new Error("Wallet not ready");
@@ -293,24 +297,27 @@ const deposit = async (amount: bigint) => {
   setError(null);
 
   try {
-    // (선택) 잔고 체크 – 너무 부족하면 바로 안내
+    // (선택) 잔고 체크
     const bal = await suiClient.getBalance({
       owner: currentAccount.address,
       coinType: "0x2::sui::SUI",
     });
-    const need = amount + 50_000_000n; // 대략 가스예산 포함 최소치 (상황에 맞게 조정)
+    const need = amount + 50_000_000n; // 가스 예산 포함 대략치
     if (BigInt(bal.totalBalance) < need) {
       throw new Error("SUI 잔고가 부족합니다. (입금액 + 가스 예산 필요)");
     }
 
     // 1) 트랜잭션 생성
     const tx = new Transaction();
-    tx.setGasBudget(50_000_000n); // 네트워크/혼잡도에 따라 조정
+    tx.setGasBudget(50_000_000n);
 
-    // 2) 가스 코인에서 amount 만큼 분리 → Coin<SUI> 하나 생성
-    const [paymentCoin] = tx.splitCoins(tx.gas, [tx.pure.u64(amount.toString())]);
+    // 2) 가스에서 amount만큼 분리 → Coin<SUI>
+    const [paymentCoin] = tx.splitCoins(
+      tx.gas,
+      [tx.pure.u64(amount.toString())]
+    );
 
-    // 3) deposit 호출 (TxContext는 자동)
+    // 3) deposit 호출 (TxContext는 자동 주입)
     tx.moveCall({
       target: `${HYBRID_WALLET_CONTRACT}::hybrid_wallet::deposit`,
       arguments: [
@@ -326,22 +333,33 @@ const deposit = async (amount: bigint) => {
         {
           onSuccess: async (res) => {
             try {
-              const digest = (res as any).digest ?? (res as any).effects?.transactionDigest ?? res;
+              const digest =
+                (res as any).digest ??
+                (res as any).effects?.transactionDigest ??
+                res;
               await suiClient.waitForTransaction({
                 digest,
-                options: { showEffects: true, showEvents: true, showObjectChanges: true },
+                options: {
+                  showEffects: true,
+                  showEvents: true,
+                  showObjectChanges: true,
+                },
               });
               await refreshHybridWallet();
               resolve();
-            } catch (e) { reject(e); }
+            } catch (e) {
+              reject(e);
+            }
           },
-          onError: reject,
+          onError: (err) => reject(err),
         }
       );
     });
   } catch (e: any) {
     console.error("[deposit] failed", e);
     setError(e?.message ?? "Failed to deposit");
+    // ★ 실패를 호출측으로 전달해야 UI에서 성공 alert가 안 뜸
+    throw e;
   } finally {
     setIsLoading(false);
   }
@@ -444,6 +462,7 @@ const deposit = async (amount: bigint) => {
     refreshHybridWallet,
     sendPayment,
     loadHybridWalletForAccount,
+    deposit,
   };
 
   return (
