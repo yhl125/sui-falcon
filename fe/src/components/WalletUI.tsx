@@ -7,7 +7,10 @@ import {
 } from '@mysten/dapp-kit';
 import { Transaction } from '@mysten/sui/transactions';
 import { MIST_PER_SUI } from '@mysten/sui/utils';
-import { WalletHeader, WalletBalance, WalletActions, TransferModal } from './wallet';
+import { WalletHeader } from './wallet/WalletHeader';
+import { WalletBalance } from './wallet/WalletBalance';
+import { WalletActions } from './wallet/WalletActions';
+import { TransferModal } from './wallet/TransferModal';
 
 interface WalletUIProps {
   // Optional props for additional customization
@@ -143,7 +146,7 @@ export const WalletUI: React.FC<WalletUIProps> = ({
           animation: 'walletFloat 4s ease-in-out infinite'
         }}
       >
-        <WalletHeader address={currentAccount.address} />
+        <WalletHeader />
         <WalletBalance balance={suiBalance} />
         <WalletActions onDeposit={onDeposit} onSend={handleSend} />
 

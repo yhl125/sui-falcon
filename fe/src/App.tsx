@@ -1,7 +1,7 @@
 // src/App.tsx
 import React, { useState } from "react";
 import StartPage from "./pages/StartPage";
-import WalletUI from "./components/WalletUI";
+import WalletPage from "./pages/WalletPage";
 
 function App() {
   const [started, setStarted] = useState(false);
@@ -11,7 +11,7 @@ function App() {
       {!started ? (
         <StartPage onStart={() => setStarted(true)} />
       ) : (
-        <WalletUI />
+        <WalletPage />
       )}
     </>
   );
