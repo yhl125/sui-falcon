@@ -77,12 +77,12 @@ export class HybridWallet {
   static fromOnChainData(objectId: string, content: any): HybridWallet {
     const wallet = new HybridWallet();
     wallet.id = objectId;
-    wallet.ed25519_pubkey = content.ed25519_pubkey
-      ? new Uint8Array(content.ed25519_pubkey)
+    wallet.ed25519_pubkey = content.fields.ed25519_pubkey
+      ? new Uint8Array(content.fields.ed25519_pubkey)
       : null;
-    wallet.falcon_pubkey = content.falcon_pubkey || null;
-    wallet.treasury = BigInt(content.treasury || 0);
-    wallet.nonce = BigInt(content.nonce || 0);
+    wallet.falcon_pubkey = content.fields.falcon_pubkey || null;
+    wallet.treasury = BigInt(content.fields.treasury || 0);
+    wallet.nonce = BigInt(content.fields.nonce || 0);
     return wallet;
   }
 
