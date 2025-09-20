@@ -19,7 +19,7 @@ falcon_move = { git = "https://github.com/yhl125/sui-falcon.git", subdir = "falc
 # Override = { local = "../conflicting/version", override = true }
 
 [addresses]
-hybrid_wallet = "0x0"
+hybrid_wallet = "0xa2cb4eab6e6be8b56dbd1cc7e7a21d47d33296296d1f87d5b3f19668ea4cc4a3"
 falcon_move = "0x7f2560767779be45e6031df07546cd79295992dfe2e3a074bd537837fd82d998"
 
 # Named addresses will be accessible in Move as `@name`. They're also exported:
