@@ -1,103 +1,182 @@
-import React from 'react';
+import React, { useState } from 'react';
+import {
+  ConnectButton,
+  useCurrentAccount,
+  useSuiClientQuery,
+  useSignAndExecuteTransaction
+} from '@mysten/dapp-kit';
+import { Transaction } from '@mysten/sui/transactions';
+import { MIST_PER_SUI } from '@mysten/sui/utils';
+import { WalletHeader } from './wallet/WalletHeader';
+import { WalletBalance } from './wallet/WalletBalance';
+import { WalletActions } from './wallet/WalletActions';
+import { TransferModal } from './wallet/TransferModal';
+import { AccountInfo } from './wallet/AccountInfo';
 
 interface WalletUIProps {
-  visible: boolean;
-  opacity: number;
+  // Optional props for additional customization
+  onDeposit?: () => void;
 }
 
-export const WalletUI: React.FC<WalletUIProps> = ({ visible, opacity }) => {
-  if (!visible) return null;
+export const WalletUI: React.FC<WalletUIProps> = ({
+  onDeposit
+}) => {
+  const currentAccount = useCurrentAccount();
+  const [isTransferModalOpen, setIsTransferModalOpen] = useState(false);
+  const [recipient, setRecipient] = useState('');
+  const [amount, setAmount] = useState('');
+  
+  // Get balance data using useSuiClientQuery
+  const { data: balance } = useSuiClientQuery(
+    'getBalance',
+    {
+      owner: currentAccount?.address ?? '',
+    },
+    {
+      enabled: !!currentAccount,
+    }
+  );
 
-  return (
-    <div
-      className="wallet-ui"
-      style={{
-        position: 'absolute',
-        top: '50%',
-        left: '50%',
-        transform: 'translate(-50%, -50%)',
-        opacity,
-        transition: 'opacity 0.5s ease',
-        background: 'rgba(255, 255, 255, 0.95)',
-        padding: '2rem',
-        borderRadius: '16px',
-        border: '3px solid #0099cc',
-        boxShadow: '0 12px 48px rgba(0, 0, 0, 0.15)',
-        backdropFilter: 'blur(12px)',
-        textAlign: 'center',
-        minWidth: '320px',
-        maxWidth: '400px',
-        color: '#333',
-        fontFamily: '"Inter", "Segoe UI", sans-serif'
-      }}
-    >
-      <div style={{ marginBottom: '1.5rem' }}>
-        <h2 style={{
-          margin: '0 0 0.5rem 0',
-          color: '#0099cc',
-          fontSize: '1.8rem',
-          fontWeight: '700',
-          letterSpacing: '-0.02em'
-        }}>
-          SuiQ Wallet
+  // Hook for executing transactions
+  const { mutate: signAndExecuteTransaction } = useSignAndExecuteTransaction();
+
+  // Convert MIST to SUI for display
+  const suiBalance = balance ? Number(balance.totalBalance) / Number(MIST_PER_SUI) : 0;
+
+  // Handle transfer transaction
+  const handleSend = () => {
+    if (!currentAccount) return;
+    setIsTransferModalOpen(true);
+  };
+
+  const executeTransfer = () => {
+    if (!currentAccount || !recipient || !amount) return;
+
+    const tx = new Transaction();
+    const [coin] = tx.splitCoins(tx.gas, [
+      tx.pure.u64(Number(amount) * Number(MIST_PER_SUI))
+    ]);
+    tx.transferObjects([coin], tx.pure.address(recipient));
+
+    signAndExecuteTransaction(
+      {
+        transaction: tx,
+        chain: 'sui:devnet',
+      },
+      {
+        onSuccess: (result) => {
+          console.log('Transfer successful:', result.digest);
+          setIsTransferModalOpen(false);
+          setRecipient('');
+          setAmount('');
+          alert(`Transfer successful! Transaction: ${result.digest}`);
+        },
+        onError: (error) => {
+          console.error('Transfer failed:', error);
+          alert('Transfer failed. Please try again.');
+        },
+      }
+    );
+  };
+
+  // If no wallet connected, show connect button
+  if (!currentAccount) {
+    return (
+      <div
+        className="wallet-container"
+        style={{
+          position: 'absolute',
+          top: '50%',
+          left: '50%',
+          transform: 'translate(-50%, -50%)',
+          background: 'rgba(255, 255, 255, 0.9)',
+          padding: '2rem',
+          borderRadius: '20px',
+          boxShadow: '0 20px 60px rgba(0, 0, 0, 0.2)',
+          backdropFilter: 'blur(20px)',
+          width: '90%',
+          maxWidth: '600px',
+          minWidth: '320px',
+          color: '#333',
+          fontFamily: '"Inter", "Segoe UI", sans-serif',
+          textAlign: 'center',
+          animation: 'walletFloat 4s ease-in-out infinite'
+        }}
+      >
+        <h2 style={{ marginBottom: '1.5rem', color: '#0099cc' }}>
+          Connect Your Wallet
         </h2>
-        <p style={{
-          margin: '0',
-          opacity: 0.7,
-          fontSize: '0.9rem',
-          fontWeight: '400'
-        }}>
-          Your gateway to the Sui ecosystem
+        <p style={{ marginBottom: '2rem', color: '#666' }}>
+          Connect your Sui wallet to start using the Falcon Wallet
         </p>
+        <ConnectButton />
+
+        {/* CSS keyframes for floating animation */}
+        <style>{`
+          @keyframes walletFloat {
+            0%, 100% {
+              transform: translate(-50%, -50%) translateY(0px);
+            }
+            50% {
+              transform: translate(-50%, -50%) translateY(-10px);
+            }
+          }
+        `}</style>
+      </div>
+    );
+  }
+  return (
+    <>
+      {/* Account Info in top-right corner */}
+      <AccountInfo />
+      
+      <div
+        className="wallet-container"
+        style={{
+          position: 'absolute',
+          top: '50%',
+          left: '50%',
+          transform: 'translate(-50%, -50%)',
+          background: 'rgba(255, 255, 255, 0.9)',
+          padding: '2rem',
+          borderRadius: '20px',
+          boxShadow: '0 20px 60px rgba(0, 0, 0, 0.2)',
+          backdropFilter: 'blur(20px)',
+          width: '90%',
+          maxWidth: '600px',
+          minWidth: '320px',
+          color: '#333',
+          fontFamily: '"Inter", "Segoe UI", sans-serif',
+          animation: 'walletFloat 4s ease-in-out infinite'
+        }}
+      >
+        <WalletHeader />
+        <WalletBalance balance={suiBalance} />
+        <WalletActions onDeposit={onDeposit} onSend={handleSend} />
+
+        {/* CSS keyframes for floating animation */}
+        <style>{`
+          @keyframes walletFloat {
+            0%, 100% {
+              transform: translate(-50%, -50%) translateY(0px);
+            }
+            50% {
+              transform: translate(-50%, -50%) translateY(-10px);
+            }
+          }
+        `}</style>
       </div>
 
-      <div style={{
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '1rem',
-        marginBottom: '1.5rem'
-      }}>
-        <button style={{
-          background: 'linear-gradient(135deg, #0099cc 0%, #0077aa 100%)',
-          color: 'white',
-          border: 'none',
-          padding: '0.75rem 1.5rem',
-          borderRadius: '12px',
-          fontSize: '1rem',
-          fontWeight: '600',
-          cursor: 'pointer',
-          transition: 'transform 0.2s ease, box-shadow 0.2s ease',
-          boxShadow: '0 4px 12px rgba(0, 153, 204, 0.3)'
-        }}>
-          Connect Wallet
-        </button>
-
-        <button style={{
-          background: 'transparent',
-          color: '#0099cc',
-          border: '2px solid #0099cc',
-          padding: '0.75rem 1.5rem',
-          borderRadius: '12px',
-          fontSize: '1rem',
-          fontWeight: '600',
-          cursor: 'pointer',
-          transition: 'all 0.2s ease'
-        }}>
-          Create New Wallet
-        </button>
-      </div>
-
-      <div style={{
-        padding: '1rem',
-        background: 'rgba(0, 153, 204, 0.1)',
-        borderRadius: '12px',
-        border: '1px solid rgba(0, 153, 204, 0.2)'
-      }}>
-        <div style={{ fontSize: '0.8rem', opacity: 0.8 }}>
-          🔒 Secure • 🌊 Sui Network • ⚡ Fast
-        </div>
-      </div>
-    </div>
+      <TransferModal
+        isOpen={isTransferModalOpen}
+        recipient={recipient}
+        amount={amount}
+        onRecipientChange={setRecipient}
+        onAmountChange={setAmount}
+        onConfirm={executeTransfer}
+        onCancel={() => setIsTransferModalOpen(false)}
+      />
+    </>
   );
 };
 

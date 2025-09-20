@@ -1,7 +1,19 @@
-import { FalconDemo } from './components/FalconDemo'
+import React, { useState } from "react";
+import StartPage from "./pages/StartPage";
+import WalletPage from "./pages/WalletPage";
 
 function App() {
-  return <FalconDemo />
+  const [started, setStarted] = useState(false);
+
+  return (
+    <>
+      {!started ? (
+        <StartPage onStart={() => setStarted(true)} />
+      ) : (
+        <WalletPage />
+      )}
+    </>
+  );
 }
 
-export default App
+export default App;

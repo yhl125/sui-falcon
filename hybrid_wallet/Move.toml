@@ -20,6 +20,7 @@ falcon_move = { git = "https://github.com/yhl125/sui-falcon.git", subdir = "falc
 
 [addresses]
 hybrid_wallet = "0x0"
+falcon_move = "0x7f2560767779be45e6031df07546cd79295992dfe2e3a074bd537837fd82d998"
 
 # Named addresses will be accessible in Move as `@name`. They're also exported:
 # for example, `std = "0x1"` is exported by the Standard Library.
