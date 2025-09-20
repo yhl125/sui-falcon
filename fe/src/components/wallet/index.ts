@@ -4,4 +4,4 @@ export { WalletActions } from './WalletActions';
 export { TransferModal } from './TransferModal';
 export { AccountInfo } from './AccountInfo';
 export { Sidebar } from './Sidebar';
-export { MainContent } from './MainContent';
+export { MainContent } from './MainContents';

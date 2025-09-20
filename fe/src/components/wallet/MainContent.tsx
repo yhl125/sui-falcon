@@ -1,384 +1,342 @@
 import React from 'react';
+import { type FalconKeys } from '../../hooks/useFalcon';
 
 interface MainContentProps {
   balance: number;
   onSend?: () => void;
   onDeposit?: () => void;
+  // Falcon functionality
+  falconKeys?: FalconKeys | null;
+  isFalconReady?: boolean;
+  falconError?: string | null;
 }
 
-export const MainContent: React.FC<MainContentProps> = ({ 
-  balance, 
-  onSend, 
-  onDeposit 
+export const MainContent: React.FC<MainContentProps> = ({
+  balance,
+  onSend,
+  onDeposit,
+  falconKeys,
+  isFalconReady,
+  falconError,
 }) => {
-  const actionButtons = [
-    { 
-      icon: '<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>', 
-      label: 'Swap', 
-      color: '#6366F1',
-      bgColor: 'rgba(99, 102, 241, 0.1)'
-    },
-    { 
-      icon: '<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M7 11l5-5 5 5M12 6v14"/></svg>', 
-      label: 'Send', 
-      color: '#10B981',
-      bgColor: 'rgba(16, 185, 129, 0.1)',
-      onClick: onSend 
-    },
-    { 
-      icon: '<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>', 
-      label: 'Buy/Sell', 
-      color: '#F59E0B',
-      bgColor: 'rgba(245, 158, 11, 0.1)'
-    },
-    { 
-      icon: '<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M7 13l3 3 7-7m0 5v6a2 2 0 01-2 2H5a2 2 0 01-2-2V9a2 2 0 012-2h6"/></svg>', 
-      label: 'Receive', 
-      color: '#8B5CF6',
-      bgColor: 'rgba(139, 92, 246, 0.1)',
-      onClick: onDeposit 
-    },
-  ];
+   // 실제 지갑 주소로 변경 필요
 
   return (
-    <div
-      style={{
-        flex: 1,
-        height: '100%',
-        background: 'rgba(30, 41, 59, 0.8)',
-        backdropFilter: 'blur(20px)',
-        borderRadius: '0 24px 24px 0',
-        padding: '16px',
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '12px',
-        overflow: 'hidden',
-        boxSizing: 'border-box',
-      }}
-    >
-      {/* Top Banner */}
+    <div style={{ position: 'relative', width: '100%', height: '100%' }}>
+      {/* 🌟 Outer glow */}
       <div
         style={{
-          background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(139, 92, 246, 0.1))',
-          border: '1px solid rgba(99, 102, 241, 0.2)',
-          borderRadius: '10px',
-          padding: '8px 12px',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '8px',
-          color: '#E0E7FF',
-          height: '36px',
-          flex: '0 0 auto',
+          position: 'absolute',
+          top: '50%',
+          left: '50%',
+          transform: 'translate(-50%, -50%)',
+          width: 550, // 살짝 줄임
+          height: 340,
+          pointerEvents: 'none',
+          zIndex: 0,
+          background: `
+            radial-gradient(closest-side, 
+              rgba(64, 224, 208, 0.7), 
+              rgba(32, 178, 170, 0.5) 40%, 
+              rgba(20, 184, 166, 0.3) 60%, 
+              rgba(16, 185, 129, 0.2) 80%, 
+              transparent 95%
+            )
+          `,
+          filter: 'blur(35px)',
+          opacity: 0.9,
+          animation: 'staticGlow 3s ease-in-out infinite',
+        }}
+      />
+      
+      {/* 🌟 Middle glow layer */}
+      <div
+        style={{
+          position: 'absolute',
+          top: '50%',
+          left: '50%',
+          transform: 'translate(-50%, -50%)',
+          width: 500,
+          height: 300,
+          pointerEvents: 'none',
+          zIndex: 0,
+          background: `
+            radial-gradient(closest-side, 
+              rgba(224, 255, 255, 0.6), 
+              rgba(64, 224, 208, 0.4) 50%, 
+              rgba(32, 178, 170, 0.3) 70%, 
+              transparent 85%
+            )
+          `,
+          filter: 'blur(20px)',
+          opacity: 0.8,
+          animation: 'staticGlow 3s ease-in-out infinite 0.3s',
+        }}
+      />
+      
+      {/* 🌟 Inner bright core */}
+      <div
+        style={{
+          position: 'absolute',
+          top: '50%',
+          left: '50%',
+          transform: 'translate(-50%, -50%)',
+          width: 470,
+          height: 270,
+          pointerEvents: 'none',
+          zIndex: 0,
+          background: `
+            radial-gradient(closest-side, 
+              rgba(255, 255, 255, 0.5), 
+              rgba(224, 255, 255, 0.3) 30%, 
+              rgba(64, 224, 208, 0.2) 60%, 
+              transparent 80%
+            )
+          `,
+          filter: 'blur(10px)',
+          opacity: 0.7,
+          animation: 'staticGlow 3s ease-in-out infinite 0.6s',
+        }}
+      />
+
+      {/* 🧊 The card with intense shimmer effect */}
+      <div
+        style={{
+          position: 'absolute',
+          top: '50%',
+          left: '50%',
+          transform: 'translate(-50%, -50%)',
+          zIndex: 1,
+          width: 460,
+          minHeight: 220,
+          padding: 32,
+          borderRadius: 16,
+          // 더 밝은 글래스 모피즘 배경
+          background: 'rgba(255, 255, 255, 0.95)',
+          backdropFilter: 'blur(25px)',
+          WebkitBackdropFilter: 'blur(25px)',
+          // 강렬한 빛나는 테두리와 그림자
+          boxShadow: `
+            0 0 25px rgba(64, 224, 208, 0.6),
+            0 0 50px rgba(32, 178, 170, 0.4),
+            0 0 75px rgba(20, 184, 166, 0.3),
+            0 15px 45px rgba(0, 0, 0, 0.1),
+            inset 0 1px 0 rgba(255, 255, 255, 0.9),
+            inset 0 0 20px rgba(224, 255, 255, 0.3)
+          `,
+          border: '2px solid rgba(64, 224, 208, 0.7)',
+          color: '#1F2937',
+          animation: 'cardStaticGlow 4s ease-in-out infinite', // 움직임 없는 글로우만
         }}
       >
+        {/* Balance Section */}
         <div
           style={{
-            width: '20px',
-            height: '20px',
-            color: '#6366F1',
+            textAlign: 'center',
+            marginBottom: '30px',
           }}
         >
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
-          </svg>
+          <div
+            style={{
+              fontSize: '56px',
+              fontWeight: '700',
+              marginBottom: '12px',
+            }}
+          >
+            ${balance.toFixed(3)}
+          </div>
         </div>
-        <span style={{ fontSize: '13px', fontWeight: '500' }}>
-          Deposit on Falcon to win SUI rewards!
-        </span>
-      </div>
 
-      {/* Balance Section */}
-      <div style={{ display: 'flex', gap: '12px', flex: '0 0 auto', height: '120px' }}>
-        {/* Main Balance */}
+        {/* Action Buttons */}
         <div
           style={{
-            flex: 2,
-            background: 'rgba(51, 65, 85, 0.6)',
-            borderRadius: '12px',
-            padding: '16px',
-            color: 'white',
-            height: '100%',
             display: 'flex',
-            flexDirection: 'column',
-            justifyContent: 'space-between',
+            justifyContent: 'center',
+            gap: '20px',
+            marginBottom: '40px',
           }}
         >
+          <button
+            onClick={onSend}
+            style={{
+              padding: '12px 32px',
+              fontSize: '16px',
+              fontWeight: '600',
+              borderRadius: '24px',
+              border: 'none',
+              background: '#2d2e3a',
+              color: '#ffffff',
+              cursor: 'pointer',
+              transition: 'all 0.2s',
+            }}
+            onMouseEnter={(e) => {
+              e.target.style.background = '#3d3e4a';
+              e.target.style.transform = 'translateY(-2px)';
+            }}
+            onMouseLeave={(e) => {
+              e.target.style.background = '#2d2e3a';
+              e.target.style.transform = 'translateY(0)';
+            }}
+          >
+            Send
+          </button>
+          <button
+            onClick={onDeposit}
+            style={{
+              padding: '12px 32px',
+              fontSize: '16px',
+              fontWeight: '600',
+              borderRadius: '24px',
+              border: 'none',
+              background: '#2d2e3a',
+              color: '#ffffff',
+              cursor: 'pointer',
+              transition: 'all 0.2s',
+            }}
+            onMouseEnter={(e) => {
+              e.target.style.background = '#3d3e4a';
+              e.target.style.transform = 'translateY(-2px)';
+            }}
+            onMouseLeave={(e) => {
+              e.target.style.background = '#2d2e3a';
+              e.target.style.transform = 'translateY(0)';
+            }}
+          >
+            Deposit
+          </button>
+        </div>
+
+        {/* Tabs */}
+        <div
+          style={{
+            display: 'flex',
+            gap: '30px',
+            borderBottom: '1px solid #2d2e3a',
+            marginBottom: '30px',
+            paddingBottom: '10px',
+          }}
+        >
+          <div
+            style={{
+              fontSize: '18px',
+              fontWeight: '600',
+              color: '#2d2e3a',
+              cursor: 'pointer',
+              paddingBottom: '10px',
+              borderBottom: '2px solid #4a9eff',
+            }}
+          >
+            Tokens
+          </div>
+        </div>
+
+        {/* Token List */}
+        <div
+          style={{
+            flex: 1,
+            overflowY: 'auto',
+          }}
+        >
+          {/* SUI Token */}
           <div
             style={{
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
+              padding: '20px 0',
+              borderBottom: '1px solid #2d2e3a',
             }}
           >
-            <h1
-              style={{
-                fontSize: '1.5rem',
-                fontWeight: '700',
-                margin: 0,
-                color: 'white',
-              }}
-            >
-              ${balance.toFixed(2)}
-            </h1>
-            <div
-              style={{
-                width: '24px',
-                height: '24px',
-                background: 'rgba(255, 255, 255, 0.1)',
-                borderRadius: '6px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                cursor: 'pointer',
-                color: 'white',
-              }}
-            >
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/>
-              </svg>
-            </div>
-          </div>
-
-          {/* Coins Section */}
-          <div>
-            <h3
-              style={{
-                fontSize: '14px',
-                color: '#94A3B8',
-                margin: '0 0 8px 0',
-                fontWeight: '500',
-              }}
-            >
-              Coins
-            </h3>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
               <div
                 style={{
-                  fontSize: '1.5rem',
-                  fontWeight: '600',
-                  color: 'white',
-                }}
-              >
-                ${balance.toFixed(2)}
-              </div>
-              <div
-                style={{
-                  fontSize: '14px',
-                  color: '#EF4444',
-                  fontWeight: '500',
-                }}
-              >
-                -$3.09
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Investments Section */}
-        <div
-          style={{
-            flex: 1,
-            background: 'rgba(51, 65, 85, 0.6)',
-            borderRadius: '12px',
-            padding: '16px',
-            color: 'white',
-            display: 'flex',
-            flexDirection: 'column',
-            justifyContent: 'center',
-            height: '100%',
-          }}
-        >
-          <h3
-            style={{
-              fontSize: '12px',
-              color: '#94A3B8',
-              margin: '0 0 8px 0',
-              fontWeight: '500',
-            }}
-          >
-            Investments
-          </h3>
-          <div
-            style={{
-              fontSize: '1rem',
-              fontWeight: '600',
-              color: 'white',
-            }}
-          >
-            Invest to start earning today
-          </div>
-        </div>
-      </div>
-
-      {/* Action Buttons */}
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(4, 1fr)',
-          gap: '8px',
-          flex: '0 0 auto',
-          height: '70px',
-        }}
-      >
-        {actionButtons.map((button, index) => (
-          <button
-            key={index}
-            onClick={button.onClick}
-            style={{
-              background: button.bgColor,
-              border: `1px solid ${button.color}20`,
-              borderRadius: '10px',
-              padding: '12px',
-              color: button.color,
-              cursor: 'pointer',
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              gap: '6px',
-              transition: 'all 0.2s ease',
-              fontSize: '12px',
-              fontWeight: '600',
-              backdropFilter: 'blur(10px)',
-              height: '100%',
-              justifyContent: 'center',
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.transform = 'translateY(-2px)';
-              e.currentTarget.style.background = button.color + '20';
-              e.currentTarget.style.boxShadow = `0 8px 25px ${button.color}30`;
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.transform = 'translateY(0)';
-              e.currentTarget.style.background = button.bgColor;
-              e.currentTarget.style.boxShadow = 'none';
-            }}
-          >
-            <span dangerouslySetInnerHTML={{ __html: button.icon }} />
-            <span>{button.label}</span>
-          </button>
-        ))}
-      </div>
-
-      {/* Your Coins Section */}
-      <div
-        style={{
-          background: 'rgba(51, 65, 85, 0.6)',
-          borderRadius: '12px',
-          padding: '16px',
-          color: 'white',
-          flex: 1,
-          minHeight: 0,
-          display: 'flex',
-          flexDirection: 'column',
-          overflow: 'hidden',
-        }}
-      >
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            marginBottom: '12px',
-            flex: '0 0 auto',
-          }}
-        >
-          <h2
-            style={{
-              fontSize: '1.1rem',
-              fontWeight: '700',
-              margin: 0,
-              color: 'white',
-            }}
-          >
-            Your Coins
-          </h2>
-          <div
-            style={{
-              width: '32px',
-              height: '32px',
-              background: 'rgba(255, 255, 255, 0.1)',
-              borderRadius: '8px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              cursor: 'pointer',
-            }}
-          >
-            🔍
-          </div>
-        </div>
-
-        {/* SUI Token */}
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            padding: '8px 0',
-            borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
-            flex: '0 0 auto',
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <div
-              style={{
-                width: '28px',
-                height: '28px',
-                background: '#4F9CF9',
-                borderRadius: '50%',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontSize: '14px',
-                color: 'white',
-                fontWeight: 'bold',
-              }}
-            >
-              S
-            </div>
-            <div>
-              <div
-                style={{
+                  width: '48px',
+                  height: '48px',
+                  borderRadius: '50%',
+                  background: 'linear-gradient(135deg, #4a9eff, #6ab7ff)',
                   display: 'flex',
                   alignItems: 'center',
-                  gap: '8px',
-                  marginBottom: '4px',
+                  justifyContent: 'center',
+                  fontSize: '24px',
                 }}
               >
-                <span style={{ fontWeight: '600', fontSize: '16px' }}>Sui</span>
-                <span
+                💧
+              </div>
+              <div>
+                <div
                   style={{
-                    background: '#4F9CF9',
-                    borderRadius: '50%',
-                    width: '16px',
-                    height: '16px',
+                    fontSize: '20px',
+                    fontWeight: '600',
                     display: 'flex',
                     alignItems: 'center',
-                    justifyContent: 'center',
-                    fontSize: '10px',
+                    gap: '8px',
                   }}
                 >
-                  ✓
-                </span>
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <span style={{ color: '#94A3B8', fontSize: '14px' }}>$3.67</span>
-                <span style={{ color: '#EF4444', fontSize: '14px' }}>-4.73%</span>
+                  SUI
+                  <span
+                    style={{
+                      background: '#4a9eff',
+                      borderRadius: '50%',
+                      width: '16px',
+                      height: '16px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}
+                  >
+                    ✓
+                  </span>
+                </div>
+                <div style={{ color: '#8b92a0', fontSize: '14px' }}>
+                  {`${balance.toFixed(3)} SUI`}
+                </div>
               </div>
             </div>
-          </div>
-          <div style={{ textAlign: 'right' }}>
-            <div style={{ fontWeight: '600', fontSize: '16px', marginBottom: '4px' }}>
-              ${balance.toFixed(2)}
-            </div>
-            <div style={{ color: '#94A3B8', fontSize: '14px' }}>
-              {balance.toFixed(2)} SUI
+            <div style={{ textAlign: 'right' }}>
+              <div style={{ fontSize: '20px', fontWeight: '600' }}>
+                ${balance.toFixed(3)}
+              </div>
             </div>
           </div>
         </div>
       </div>
+
+      {/* CSS Animations */}
+      <style>{`
+        @keyframes staticGlow {
+          0%, 100% {
+            opacity: 0.7;
+            filter: blur(35px);
+          }
+          50% {
+            opacity: 1;
+            filter: blur(30px);
+          }
+        }
+
+        @keyframes cardStaticGlow {
+          0%, 100% {
+            box-shadow: 
+              0 0 25px rgba(64, 224, 208, 0.6),
+              0 0 50px rgba(32, 178, 170, 0.4),
+              0 0 75px rgba(20, 184, 166, 0.3),
+              0 15px 45px rgba(0, 0, 0, 0.1),
+              inset 0 1px 0 rgba(255, 255, 255, 0.9),
+              inset 0 0 20px rgba(224, 255, 255, 0.3);
+            border: 2px solid rgba(64, 224, 208, 0.7);
+          }
+          50% {
+            box-shadow: 
+              0 0 35px rgba(64, 224, 208, 0.8),
+              0 0 70px rgba(32, 178, 170, 0.6),
+              0 0 105px rgba(20, 184, 166, 0.4),
+              0 15px 45px rgba(0, 0, 0, 0.1),
+              inset 0 2px 0 rgba(255, 255, 255, 0.95),
+              inset 0 0 30px rgba(224, 255, 255, 0.5);
+            border: 2px solid rgba(64, 224, 208, 0.9);
+          }
+        }
+      `}</style>
     </div>
   );
 };
-
-export default MainContent;

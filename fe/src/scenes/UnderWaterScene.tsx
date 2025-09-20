@@ -21,9 +21,10 @@ interface CausticRay {
 
 interface UnderWaterSceneProps {
   children?: React.ReactNode;
+  animationEnabled?: boolean; // Control whether bubbles animate
 }
 
-export const UnderWaterScene: React.FC<UnderWaterSceneProps> = ({ children }) => {
+export const UnderWaterScene: React.FC<UnderWaterSceneProps> = ({ children, animationEnabled = true }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animationFrameRef = useRef<number | undefined>(undefined);
   const lastTimeRef = useRef<number>(0);
@@ -51,13 +52,13 @@ export const UnderWaterScene: React.FC<UnderWaterSceneProps> = ({ children }) =>
     buttonText: '#FFFFFF'
   };
 
-  // Initialize bubbles
-  const initializeBubbles = useCallback((width: number, height: number) => {
+  // Initialize bubbles (start them off-screen when animation is disabled)
+  const initializeBubbles = useCallback((width: number, height: number, shouldAnimate: boolean = true) => {
     const bubbles: Bubble[] = [];
-    for (let i = 0; i < 25; i++) {
+    for (let i = 0; i < 18; i++) { // Reduced from 25 to 18 for better performance
       bubbles.push({
         x: Math.random() * width,
-        y: height + Math.random() * 200, // Start below screen
+        y: shouldAnimate ? height + Math.random() * 200 : height + 100 + i * 50, // Start far below screen when animation disabled
         size: Math.random() * 13 + 3,
         speed: Math.random() * 0.5 + 0.3,
         opacity: Math.random() * 0.6 + 0.4,
@@ -94,21 +95,28 @@ export const UnderWaterScene: React.FC<UnderWaterSceneProps> = ({ children }) =>
     ctx.fillRect(0, 0, width, height);
   }, [colors]);
 
-  // Draw animated bubbles
-  const drawBubbles = useCallback((ctx: CanvasRenderingContext2D, width: number, height: number, deltaTime: number) => {
+  // Draw animated bubbles with animation control
+  const drawBubbles = useCallback((ctx: CanvasRenderingContext2D, width: number, height: number, deltaTime: number, shouldAnimate: boolean) => {
     bubblesRef.current.forEach((bubble, index) => {
-      // Update bubble position
-      bubble.y -= bubble.speed * deltaTime;
-      bubble.wobble += 0.02 * deltaTime;
-      bubble.x += Math.sin(bubble.wobble) * 0.5;
+      // Only update bubble position if animation is enabled
+      if (shouldAnimate) {
+        // Normalize deltaTime to prevent stuttering during heavy operations
+        const normalizedDelta = Math.min(deltaTime, 16.67); // Cap at 60fps equivalent
+        const speedMultiplier = normalizedDelta / 16.67; // Normalize to 60fps baseline
+        
+        bubble.y -= bubble.speed * normalizedDelta * 0.4; // Slower movement
+        bubble.wobble += 0.02 * normalizedDelta * 0.1;
+        bubble.x += Math.sin(bubble.wobble) * 0.3 * speedMultiplier;
 
-      // Reset bubble if it goes off screen
-      if (bubble.y < -20) {
-        bubble.y = height + 20;
-        bubble.x = Math.random() * width;
+        // Reset bubble if it goes off screen
+        if (bubble.y < -20) {
+          bubble.y = height + Math.random() * 50 + 20;
+          bubble.x = Math.random() * width;
+          bubble.wobble = Math.random() * Math.PI * 2;
+        }
       }
 
-      // Draw bubble with pixel art style
+      // Always draw bubbles, but they stay in place if animation is disabled
       ctx.save();
       ctx.globalAlpha = bubble.opacity;
 
@@ -118,11 +126,13 @@ export const UnderWaterScene: React.FC<UnderWaterSceneProps> = ({ children }) =>
       ctx.arc(bubble.x, bubble.y, bubble.size, 0, Math.PI * 2);
       ctx.fill();
 
-      // Bubble highlight
-      ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
-      ctx.beginPath();
-      ctx.arc(bubble.x - bubble.size * 0.3, bubble.y - bubble.size * 0.3, bubble.size * 0.3, 0, Math.PI * 2);
-      ctx.fill();
+      // Bubble highlight (only for larger bubbles to improve performance)
+      if (bubble.size > 6) {
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
+        ctx.beginPath();
+        ctx.arc(bubble.x - bubble.size * 0.3, bubble.y - bubble.size * 0.3, bubble.size * 0.3, 0, Math.PI * 2);
+        ctx.fill();
+      }
 
       ctx.restore();
     });
@@ -210,26 +220,37 @@ export const UnderWaterScene: React.FC<UnderWaterSceneProps> = ({ children }) =>
 
 
 
-  // Main animation loop
+  // Main animation loop with improved scheduling
   const animate = useCallback((timestamp: number) => {
     const canvas = canvasRef.current;
-    if (!canvas) return;
+    if (!canvas) {
+      animationFrameRef.current = requestAnimationFrame(animate);
+      return;
+    }
 
     const ctx = canvas.getContext('2d');
-    if (!ctx) return;
+    if (!ctx) {
+      animationFrameRef.current = requestAnimationFrame(animate);
+      return;
+    }
 
     const deltaTime = timestamp - lastTimeRef.current;
     lastTimeRef.current = timestamp;
     timeRef.current = timestamp;
 
+    // Limit frame rate to avoid excessive CPU usage during heavy operations
+    const maxDelta = 1000 / 30; // 30 FPS minimum
+    const clampedDelta = Math.min(deltaTime, maxDelta);
+
     // Clear canvas and draw ocean gradient
     drawOceanGradient(ctx, canvas.width, canvas.height);
 
-    // Draw floating bubbles
-    drawBubbles(ctx, canvas.width, canvas.height, deltaTime);
+    // Draw floating bubbles with animation control
+    drawBubbles(ctx, canvas.width, canvas.height, clampedDelta, animationEnabled);
 
+    // Schedule next frame with priority for smooth animation
     animationFrameRef.current = requestAnimationFrame(animate);
-  }, [drawOceanGradient, drawCaustics, drawBubbles, drawFloatingText]);
+  }, [drawOceanGradient, drawCaustics, drawBubbles, drawFloatingText, animationEnabled]);
 
   // Canvas setup and initialization
   useEffect(() => {
@@ -247,7 +268,7 @@ export const UnderWaterScene: React.FC<UnderWaterSceneProps> = ({ children }) =>
       }
 
       // Initialize particles
-      initializeBubbles(canvas.width, canvas.height);
+      initializeBubbles(canvas.width, canvas.height, animationEnabled);
       initializeCaustics(canvas.width);
     };
 
@@ -264,6 +285,14 @@ export const UnderWaterScene: React.FC<UnderWaterSceneProps> = ({ children }) =>
       }
     };
   }, [animate, initializeBubbles, initializeCaustics]);
+
+  // Re-initialize bubbles when animation is enabled/disabled
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    
+    initializeBubbles(canvas.width, canvas.height, animationEnabled);
+  }, [animationEnabled, initializeBubbles]);
 
   return (
     <div style={{

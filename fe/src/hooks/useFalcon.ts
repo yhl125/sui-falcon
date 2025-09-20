@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { loadPyodide, type PyodideInterface } from 'pyodide';
 
 export interface FalconKeys {
@@ -21,30 +21,73 @@ export interface MoveCompatibleData {
   pkNttRaw?: number[];
 }
 
-export const useFalcon = () => {
+export interface FalconInitOptions {
+  autoInitialize?: boolean;
+  onProgress?: (step: string, progress: number) => void;
+  onComplete?: () => void;
+  onError?: (error: string) => void;
+}
+
+export const useFalcon = (options?: FalconInitOptions) => {
   const [isLoading, setIsLoading] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [initializationProgress, setInitializationProgress] = useState(0);
+  const [currentStep, setCurrentStep] = useState<string>('');
   const pyodideRef = useRef<PyodideInterface | null>(null);
+  const initializationPromiseRef = useRef<Promise<PyodideInterface> | null>(null);
+
+  const reportProgress = useCallback((step: string, progress: number) => {
+    setCurrentStep(step);
+    // Only update progress for major milestones to reduce re-renders
+    const majorMilestones = [0, 25, 50, 75, 100];
+    const nearestMilestone = majorMilestones.find(milestone => 
+      Math.abs(progress - milestone) <= 5
+    );
+    if (nearestMilestone !== undefined) {
+      setInitializationProgress(nearestMilestone);
+    }
+    options?.onProgress?.(step, progress);
+  }, [options]);
 
   const initializePyodide = useCallback(async () => {
     if (pyodideRef.current) return pyodideRef.current;
 
-    setIsLoading(true);
-    setError(null);
+    // Return existing promise if initialization is already in progress
+    if (initializationPromiseRef.current) {
+      return initializationPromiseRef.current;
+    }
 
-    try {
-      console.log('Loading Pyodide...');
-      const pyodide = await loadPyodide({
-        indexURL: "https://cdn.jsdelivr.net/pyodide/v0.28.2/full/"
-      });
+    const initPromise = (async () => {
+      setIsLoading(true);
+      setError(null);
+      reportProgress('Starting Falcon initialization...', 0);
 
-      console.log('Installing packages...');
-      await pyodide.loadPackage(['numpy', 'pycryptodome']);
+      try {
+        reportProgress('Loading Pyodide runtime...', 10);
+        console.log('Loading Pyodide...');
+        
+        // Use setTimeout to yield control to the main thread periodically
+        await new Promise(resolve => setTimeout(resolve, 10));
+        
+        const pyodide = await loadPyodide({
+          indexURL: "https://cdn.jsdelivr.net/pyodide/v0.28.2/full/"
+        });
 
-      console.log('Loading Python files...');
-      // Python 파일들을 로드
-      const pythonFiles = await Promise.all([
+        reportProgress('Installing Python packages...', 25);
+        console.log('Installing packages...');
+        
+        // Yield control to main thread before heavy operations
+        await new Promise(resolve => setTimeout(resolve, 10));
+        await pyodide.loadPackage(['numpy', 'pycryptodome']);
+
+        reportProgress('Loading Falcon Python modules...', 50);
+        console.log('Loading Python files...');
+        
+        // Yield control to main thread before file loading
+        await new Promise(resolve => setTimeout(resolve, 10));
+        // Python 파일들을 로드
+        const pythonFiles = await Promise.all([
         fetch('/python-ref/common.py').then(r => r.text()),
         fetch('/python-ref/falcon.py').then(r => r.text()),
         fetch('/python-ref/encoding.py').then(r => r.text()),
@@ -72,13 +115,18 @@ export const useFalcon = () => {
         fetch('/python-ref/polyntt/params.py').then(r => r.text()),
       ]);
 
-      // 디렉토리 생성
-      try {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (pyodide.FS as any).mkdir('/polyntt');
-      } catch (e) {
-        console.log('Directory already exists or creation failed:', e);
-      }
+        reportProgress('Setting up Falcon environment...', 75);
+        
+        // Yield control to main thread before file system operations
+        await new Promise(resolve => setTimeout(resolve, 10));
+        
+        // 디렉토리 생성
+        try {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          (pyodide.FS as any).mkdir('/polyntt');
+        } catch (e) {
+          console.log('Directory already exists or creation failed:', e);
+        }
 
       // Python 파일들을 Pyodide 파일시스템에 저장
       pyodide.FS.writeFile('/common.py', pythonFiles[0]);
@@ -107,9 +155,14 @@ export const useFalcon = () => {
       pyodide.FS.writeFile('/polyntt/params.py', pythonFiles[23]);
       pyodide.FS.writeFile('/polyntt/__init__.py', '# polyntt package');
 
-      console.log('Initializing Falcon...');
-      // Python 환경 설정
-      await pyodide.runPython(`
+        reportProgress('Initializing Falcon crypto system...', 90);
+        console.log('Initializing Falcon...');
+        
+        // Yield control to main thread before Python execution
+        await new Promise(resolve => setTimeout(resolve, 10));
+        
+        // Python 환경 설정
+        await pyodide.runPython(`
         import sys
         import importlib
         import numpy as np
@@ -237,20 +290,37 @@ export const useFalcon = () => {
         print("Falcon initialized successfully!")
       `);
 
-      pyodideRef.current = pyodide;
-      setIsInitialized(true);
-      console.log('Pyodide initialized successfully!');
+        reportProgress('Falcon ready!', 100);
+        pyodideRef.current = pyodide;
+        setIsInitialized(true);
+        console.log('Pyodide initialized successfully!');
+        
+        // Clear the initialization promise
+        initializationPromiseRef.current = null;
+        
+        // Notify completion
+        options?.onComplete?.();
 
-      return pyodide;
-    } catch (err) {
-      const errorMsg = err instanceof Error ? err.message : 'Failed to initialize Pyodide';
-      setError(errorMsg);
-      console.error('Pyodide initialization error:', err);
-      throw err;
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
+        return pyodide;
+      } catch (err) {
+        const errorMsg = err instanceof Error ? err.message : 'Failed to initialize Pyodide';
+        setError(errorMsg);
+        console.error('Pyodide initialization error:', err);
+        
+        // Clear the initialization promise on error
+        initializationPromiseRef.current = null;
+        
+        // Notify error
+        options?.onError?.(errorMsg);
+        throw err;
+      } finally {
+        setIsLoading(false);
+      }
+    })();
+
+    initializationPromiseRef.current = initPromise;
+    return initPromise;
+  }, [reportProgress, options]);
 
   const generateKeys = useCallback(async (): Promise<FalconKeys> => {
     const pyodide = await initializePyodide();
@@ -410,10 +480,22 @@ export const useFalcon = () => {
     }
   }, [initializePyodide]);
 
+  // Auto-initialization effect
+  useEffect(() => {
+    if (options?.autoInitialize && !isInitialized && !isLoading && !initializationPromiseRef.current) {
+      console.log('Auto-initializing Falcon...');
+      initializePyodide().catch(err => {
+        console.error('Auto-initialization failed:', err);
+      });
+    }
+  }, [options?.autoInitialize, isInitialized, isLoading, initializePyodide]);
+
   return {
     isLoading,
     isInitialized,
     error,
+    initializationProgress,
+    currentStep,
     generateKeys,
     signData,
     verifySignature,

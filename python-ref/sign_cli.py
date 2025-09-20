@@ -246,6 +246,35 @@ def verify_signature_on_chain(pk, data, sig, contract_address, rpc, version):
         print("This version is not implemented.")
         return
 
+def verify_signature_on_sui(pk, data, sig, package_id, version):
+    MSG = f'"0x{data.hex()}"'
+    SIG = f'"0x{sig.hex()}"'
+
+    if version == 'ethfalcon' or version == 'falcon':
+        pk_compact = falcon_compact(Poly(pk.pk, q).ntt())
+        PK = "[" + ",".join(f'"0x{elt:064x}"' for elt in pk_compact) + "]"
+
+        command = [
+            "sui", "client", "call",
+            "--package", package_id,
+            "--module", "falcon512",
+            "--function", "verify_signature_cli",
+            "--args", PK, MSG, SIG
+        ]
+
+        result = subprocess.run(
+            command,
+            capture_output=True,
+            text=True
+        )
+        # assert result.stderr == ''
+        print(result.stderr)
+        print(result.stdout)
+    else:
+        print("This version is not implemented.")
+        return
+
+
 
 def recover_on_chain_with_transaction(data, sig, contract_address, rpc, private_key, version):
     assert version == 'epervier'
@@ -328,7 +357,7 @@ def verify_signature_on_chain_with_transaction(pk, data, sig, contract_address, 
 def cli():
     parser = argparse.ArgumentParser(description="CLI for Falcon Signature")
     parser.add_argument("action", choices=[
-                        "genkeys", "sign", "sign_tx", "verify", "verifyonchain", "verifyonchainsend", "recoveronchain", "recoveronchainsend"], help="Action to perform")
+                        "genkeys", "sign", "sign_tx", "verify", "verifyonchain", "verifyonchainsend", "recoveronchain", "recoveronchainsend", "verifyonsui"], help="Action to perform")
     parser.add_argument("--version", type=str,
                         help="Version to use (falcon or ethfalcon or epervier)")
     parser.add_argument("--nonce", type=str,
@@ -345,6 +374,8 @@ def cli():
                         help="Public key file for verification")
     parser.add_argument("--contractaddress", type=str,
                         help="Contract address for on-chain verification")
+    parser.add_argument("--packageid", type=str,
+                        help="Sui package ID for on-chain verification")
     parser.add_argument("--rpc", type=str,
                         help="RPC for on-chain verification")
     parser.add_argument("--privatekey", type=str,
@@ -441,6 +472,17 @@ def cli():
         pk_rec = recover_on_chain_with_transaction(
             bytes.fromhex(args.data), sig, args.contractaddress, args.rpc, args.privatekey, version)
         print("Public key recovered: {}".format(pk_rec))
+
+    elif args.action == "verifyonsui":
+        if not args.data or not args.pubkey or not args.signature or not args.packageid:
+            print(
+                "Error: Provide --data, --pubkey, --signature and --packageid")
+            return
+        [pk, version] = load_pk(args.pubkey)
+        sig = load_signature(args.signature)
+        verify_signature_on_sui(
+            pk, bytes.fromhex(args.data), sig, args.packageid, version)
+
 
 
 if __name__ == "__main__":

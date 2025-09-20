@@ -1,3 +1,7 @@
+// src/lib/HybridWallet.ts
+import { Ed25519Keypair } from "@mysten/sui/keypairs/ed25519";
+import type { FalconKeys } from "../hooks/useFalcon";// 타입 재사용
+
 export class HybridWallet {
   id: string | null = null; // object ID
   ed25519_pubkey: Uint8Array | null = null; // vector<u8>
@@ -7,36 +11,60 @@ export class HybridWallet {
 
   // 로컬 키 관리
   traditionalKey: string | null = null;
-  falconKey: { publicKey: string; privateKey: string } | null = null;
+  falconKey: FalconKeys | null = null;
 
-  constructor() {}
+  constructor() {
+  }
 
-  // falcon key 생성
-  init() {
-    // 1. 기존 falcon private 키 확인
-    const storedPriv = localStorage.getItem("falconPrivateKey");
-    const storedPub = localStorage.getItem("falconPublicKey");
+  // 앱 시작 시 호출
+  async init(generateFalconKeys?: () => Promise<FalconKeys>) {
+    const storedFalconKeys = localStorage.getItem("falconKeys");
 
-    if (storedPriv && storedPub) {
-      // 이미 있으면 그대로 사용
-      this.falconKey = {
-        privateKey: storedPriv,
-        publicKey: storedPub,
-      };
+    if (storedFalconKeys) {
+      try {
+        const keys: FalconKeys = JSON.parse(storedFalconKeys);
+        this.falconKey = keys;
+        console.log(" HybridWallet: Loaded existing Falcon keys");
+      } catch (error) {
+        console.error(" HybridWallet: Failed to parse Falcon keys:", error);
+        this.falconKey = null;
+      }
+    } else if (generateFalconKeys) {
+      // 처음 실행 → 키 없으면 새로 생성
+      try {
+        const keys = await generateFalconKeys();
+        this.setFalconKeys(keys.privateKey, keys.publicKey);
+        console.log("✨ HybridWallet: New Falcon keys generated");
+      } catch (err) {
+        console.error("HybridWallet: Failed to generate Falcon keys:", err);
+      }
     } else {
-      // 없으면 새로 생성 (dummy)
-      const newFalconKey = {
-        privateKey: crypto.randomUUID(), // 임시 dummy 값
-        publicKey: "falcon_pub_" + Math.random().toString(36).slice(2),
-      };
-      this.falconKey = newFalconKey;
-
-      // localStorage에 저장
-      localStorage.setItem("falconPrivateKey", newFalconKey.privateKey);
-      localStorage.setItem("falconPublicKey", newFalconKey.publicKey);
+      console.log("HybridWallet: No Falcon keys and no generator provided");
     }
   }
 
+  // Falcon 키 존재 여부
+  hasFalconKeys(): boolean {
+    return this.falconKey !== null;
+  }
+
+  // Falcon 키 저장
+  setFalconKeys(privateKey: string, publicKey: string) {
+    this.falconKey = { privateKey, publicKey };
+    localStorage.setItem("falconKeys", JSON.stringify(this.falconKey));
+    console.log("HybridWallet: Falcon keys updated & stored in localStorage");
+  }
+
+  // 키 생성 (Ed25519 + Falcon)
+  createKeys() {
+    this.traditionalKey = new Ed25519Keypair();
+
+    return {
+      suiAddress: this.traditionalKey.getPublicKey().toSuiAddress(),
+      falconPub: this.falconKey?.publicKey ?? "",
+    };
+  }
+  
   // 키 반환 (Ed25519 + Falcon)
   getKeys(curAccountAddress: string) {
     return {
@@ -45,6 +73,15 @@ export class HybridWallet {
     };
   }
 
+  // 트랜잭션 서명 (예시)
+  async signTransaction(tx: Uint8Array) {
+    const tradSig = this.traditionalKey?.sign(tx);
+    const falconSig = this.falconKey
+      ? new TextEncoder().encode("dummyFalconSig")
+      : new Uint8Array();
+    return { tradSig, falconSig };
+  }
+  
   // Falcon 서명 반환
   async signPayment(txData: Uint8Array): Promise<{
     falconSig: Uint8Array;
@@ -55,8 +92,8 @@ export class HybridWallet {
       : new Uint8Array();
     return { falconSig };
   }
-
-  // 온체인 데이터로부터 HybridWallet 인스턴스 생성
+  
+   // 온체인 데이터로부터 HybridWallet 인스턴스 생성
   static fromOnChainData(objectId: string, content: any): HybridWallet {
     const wallet = new HybridWallet();
     wallet.id = objectId;
