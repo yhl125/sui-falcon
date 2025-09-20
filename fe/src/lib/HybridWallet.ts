@@ -1,6 +1,6 @@
 // src/lib/HybridWallet.ts
 import { Ed25519Keypair } from "@mysten/sui/keypairs/ed25519";
-import type { FalconKeys } from "../hooks/useFalcon";// 타입 재사용
+import type { FalconKeys } from "../hooks/useFalcon"; // 타입 재사용
 
 export class HybridWallet {
   id: string | null = null; // object ID
@@ -13,8 +13,7 @@ export class HybridWallet {
   traditionalKey: string | null = null;
   falconKey: FalconKeys | null = null;
 
-  constructor() {
-  }
+  constructor() {}
 
   // 앱 시작 시 호출
   async init(generateFalconKeys?: () => Promise<FalconKeys>) {
@@ -55,16 +54,6 @@ export class HybridWallet {
     console.log("HybridWallet: Falcon keys updated & stored in localStorage");
   }
 
-  // 키 생성 (Ed25519 + Falcon)
-  createKeys() {
-    this.traditionalKey = new Ed25519Keypair();
-
-    return {
-      suiAddress: this.traditionalKey.getPublicKey().toSuiAddress(),
-      falconPub: this.falconKey?.publicKey ?? "",
-    };
-  }
-  
   // 키 반환 (Ed25519 + Falcon)
   getKeys(curAccountAddress: string) {
     return {
@@ -73,15 +62,6 @@ export class HybridWallet {
     };
   }
 
-  // 트랜잭션 서명 (예시)
-  async signTransaction(tx: Uint8Array) {
-    const tradSig = this.traditionalKey?.sign(tx);
-    const falconSig = this.falconKey
-      ? new TextEncoder().encode("dummyFalconSig")
-      : new Uint8Array();
-    return { tradSig, falconSig };
-  }
-  
   // Falcon 서명 반환
   async signPayment(txData: Uint8Array): Promise<{
     falconSig: Uint8Array;
@@ -92,8 +72,8 @@ export class HybridWallet {
       : new Uint8Array();
     return { falconSig };
   }
-  
-   // 온체인 데이터로부터 HybridWallet 인스턴스 생성
+
+  // 온체인 데이터로부터 HybridWallet 인스턴스 생성
   static fromOnChainData(objectId: string, content: any): HybridWallet {
     const wallet = new HybridWallet();
     wallet.id = objectId;
