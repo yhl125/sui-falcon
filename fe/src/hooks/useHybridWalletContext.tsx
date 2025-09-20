@@ -72,6 +72,20 @@ export const HybridWalletProvider: React.FC<HybridWalletProviderProps> = ({
   //   >
   // >(new Map());
 
+  // 최신 nonce 한 번만 정확히 읽어오는 헬퍼
+async function getOnChainNonce(suiClient: any, walletId: string): Promise<bigint> {
+  const obj = await suiClient.getObject({
+    id: walletId,
+    options: { showContent: true },
+  });
+  const fields = (obj?.data?.content as any)?.fields;
+  if (!fields || fields.nonce === undefined) {
+    throw new Error("Failed to read on-chain nonce");
+  }
+  // Sui SDK가 u64를 문자열로 돌려주므로 bigint로 변환
+  return BigInt(fields.nonce);
+}
+
   // 하이브리드 지갑 로드
   const loadHybridWalletForAccount = async (accountAddress: string) => {
     console.log("load 시작", accountAddress);
@@ -373,130 +387,91 @@ export const HybridWalletProvider: React.FC<HybridWalletProviderProps> = ({
       setIsLoading(false);
     }
   };
+ 
+  // 하이브리드 지갑 수이 송금 (nonce 최신화 버전)
+const sendPayment = async (recipient: string, amount: bigint) => {
+  if (!currentAccount || !hybridWallet || !hybridWalletId) {
+    throw new Error("No account connected or hybrid wallet not initialized");
+  }
 
-  // 하이브리드 지갑 수이 송금
-  const sendPayment = async (recipient: string, amount: bigint) => {
-    if (!currentAccount || !hybridWallet || !hybridWalletId) {
-      throw new Error("No account connected or hybrid wallet not initialized");
+  setIsLoading(true);
+  setError(null);
+
+  try {
+    // 0) 보낼 때마다 온체인에서 최신 nonce 읽기
+    const latestNonce = await getOnChainNonce(suiClient, hybridWalletId);
+    console.log("[send] latest on-chain nonce =", latestNonce.toString());
+
+    // 1) 메시지 준비 (항상 최신 nonce 사용)
+    const txData = hybridWallet.encodePayment(recipient, amount, latestNonce);
+
+    // 2) 서명 만들기
+    const { falconSig } = await hybridWallet.signPayment(txData);
+
+    // dapp-kit personal message 서명 → raw Ed25519 64바이트 추출
+    function extractRawEd25519(serializedB64: string): Uint8Array {
+      const bytes = Uint8Array.from(atob(serializedB64), c => c.charCodeAt(0));
+      if (bytes.length < 65) throw new Error("Invalid serialized signature");
+      const scheme = bytes[0]; // 0x00 = Ed25519
+      if (scheme !== 0x00) throw new Error("Expected Ed25519 signature");
+      return bytes.slice(1, 65); // 64 bytes
     }
 
-    setIsLoading(true);
-    setError(null);
+    const ed25519SigRaw = await new Promise<Uint8Array>((resolve, reject) => {
+      signPersonalMessage(
+        { message: txData },
+        {
+          onSuccess: ({ signature }) => {
+            try { resolve(extractRawEd25519(signature)); }
+            catch (e) { reject(e); }
+          },
+          onError: reject,
+        }
+      );
+    });
 
-    // 1) 트랜잭션 생성
+    // 3) 트랜잭션 생성
     const tx = new Transaction();
     tx.setGasBudget(50_000_000n);
-
-    // 2) 가스에서 amount만큼 분리 → Coin<SUI>
-    const [paymentCoin] = tx.splitCoins(tx.gas, [
-      tx.pure.u64(amount.toString()),
-    ]);
-
-    // 3) deposit 호출 (TxContext는 자동 주입)
     tx.moveCall({
-      target: `${HYBRID_WALLET_CONTRACT}::hybrid_wallet::deposit`,
+      target: `${HYBRID_WALLET_CONTRACT}::hybrid_wallet::send_payment`,
       arguments: [
-        tx.object(hybridWalletId), // &mut HybridWallet
-        paymentCoin, // Coin<SUI>
+        tx.object(hybridWalletId),
+        tx.pure.address(recipient),
+        tx.pure.u64(amount.toString()),
+        tx.pure("vector<u8>", Array.from(ed25519SigRaw)), // Ed25519 64바이트
+        tx.pure("vector<u8>", Array.from(falconSig)),     // Falcon 서명 포맷에 맞게
       ],
     });
 
-    // 4) 전송/확정/리프레시
+    // 4) 전송 & 확정 후 상태 갱신
     await new Promise<void>((resolve, reject) => {
       signAndExecuteTransaction(
         { transaction: tx },
         {
           onSuccess: async (res) => {
             try {
-              const digest =
-                (res as any).digest ??
-                (res as any).effects?.transactionDigest ??
-                res;
+              const digest = (res as any).digest ?? (res as any).effects?.transactionDigest ?? res;
               await suiClient.waitForTransaction({
                 digest,
-                options: {
-                  showEffects: true,
-                  showEvents: true,
-                  showObjectChanges: true,
-                },
+                options: { showEffects: true, showEvents: true, showObjectChanges: true },
               });
-              console.log("deposit 성공, 지갑 리프레시");
-
+              // 성공하면 온체인 nonce가 증가하므로 반드시 리프레시
               await refreshHybridWallet();
               resolve();
-            } catch (e) {
-              reject(e);
-            }
+            } catch (e) { reject(e); }
           },
-          onError: (err) => reject(err),
+          onError: reject,
         }
       );
     });
-
-    try {
-      // 1. 메시지 준비
-      const txData = hybridWallet.encodePayment(
-        recipient,
-        amount,
-        hybridWallet.nonce
-      );
-      // 2. falcon 서명 생성
-      const { falconSig } = await hybridWallet.signPayment(txData);
-      // 3. ed25519 서명 생성
-      const ed25519Sig = await new Promise<Uint8Array>((resolve) => {
-        signPersonalMessage(
-          {
-            message: txData,
-          },
-          {
-            onSuccess: (signature) =>
-              resolve(
-                new Uint8Array(
-                  atob(signature.bytes)
-                    .split("")
-                    .map((c) => c.charCodeAt(0))
-                )
-              ),
-            onError: (error) => resolve(new Uint8Array()),
-          }
-        );
-      });
-
-      // 2. 트랜잭션 생성
-      const tx = new Transaction();
-      tx.moveCall({
-        target: `${HYBRID_WALLET_CONTRACT}::hybrid_wallet::send_payment`,
-        arguments: [
-          tx.object(hybridWalletId),
-          tx.pure.address(recipient),
-          tx.pure.u64(amount.toString()),
-          tx.pure(new Uint8Array(ed25519Sig)),
-          tx.pure(new Uint8Array(falconSig)),
-        ],
-      });
-      signAndExecuteTransaction(
-        {
-          transaction: tx,
-        },
-        {
-          onSuccess: async (result) => {
-            console.log("Payment sent successfully:", result);
-            await refreshHybridWallet();
-          },
-          onError: (error) => {
-            console.error("Payment failed:", error);
-            setError(error.message || "Failed to send payment");
-          },
-        }
-      );
-    } catch (err) {
-      console.error("Failed to send payment:", err);
-      setError(err instanceof Error ? err.message : "Failed to send payment");
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
+  } catch (err: any) {
+    console.error("Failed to send payment:", err);
+    setError(err?.message ?? "Failed to send payment");
+  } finally {
+    setIsLoading(false);
+  }
+};
   // 계정 변경 감지 및 하이브리드 지갑 로드
   useEffect(() => {
     if (currentAccount?.address) {
