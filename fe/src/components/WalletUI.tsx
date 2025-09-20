@@ -119,14 +119,16 @@ export const WalletUI: React.FC<WalletUIProps> = ({ onDeposit }) => {
   };
 
   // Validation helpers
-  const isValidAddress = (addr: string) => /^0x[0-9a-fA-F]{2,}$/.test(addr.trim());
+  const isValidAddress = (addr: string) =>
+    /^0x[0-9a-fA-F]{2,}$/.test(addr.trim());
   const isValidAmount = (amt: string) => {
     const num = parseFloat(amt);
     return !isNaN(num) && num > 0;
   };
 
   // Check if send button should be enabled
-  const canSend = isValidAddress(recipient) && isValidAmount(amount) && !isLoading;
+  const canSend =
+    isValidAddress(recipient) && isValidAmount(amount) && !isLoading;
 
   const handleSubmitSend = async () => {
     try {
@@ -140,14 +142,15 @@ export const WalletUI: React.FC<WalletUIProps> = ({ onDeposit }) => {
 
       // Success: close modal and reset
       setIsTransferModalOpen(false);
-      setRecipient('');
-      setAmount('');
-      alert('전송 완료!');
+      setRecipient("");
+      setAmount("");
+      alert("전송 완료!");
     } catch (error: any) {
-      console.error('Send failed:', error);
-      alert(error?.message || '전송 실패');
+      console.error("Send failed:", error);
+      alert(error?.message || "전송 실패");
     }
-    
+  };
+
   const executeTransfer = () => {
     if (!currentAccount || !recipient || !amount) return;
 
@@ -211,22 +214,22 @@ export const WalletUI: React.FC<WalletUIProps> = ({ onDeposit }) => {
   // Handle deposit functionality
   const handleDeposit = async () => {
     try {
-      const amountStr = prompt("Enter the amount of SUI to deposit:");
+      const amountStr = prompt("입금할 SUI 수량을 입력하세요:");
       if (!amountStr || amountStr.trim() === "") return;
 
       const amountSui = parseFloat(amountStr);
       if (isNaN(amountSui) || amountSui <= 0) {
-        alert("Please enter a valid amount.");
+        alert("올바른 수량을 입력해주세요.");
         return;
       }
 
       const amountMist = BigInt(Math.floor(amountSui * 1e9));
       await deposit(amountMist);
-      alert(`${amountSui} SUI deposit completed!`);
+      alert(`${amountSui} SUI 입금이 완료되었습니다!`);
     } catch (error: any) {
       console.error("Deposit failed:", error);
       alert(
-        `Deposit failed: ${error?.message || "An unknown error occurred."}`
+        `입금 실패: ${error?.message || "알 수 없는 오류가 발생했습니다."}`
       );
     }
   };
@@ -641,7 +644,6 @@ export const WalletUI: React.FC<WalletUIProps> = ({ onDeposit }) => {
       >
         {/* Main Content */}
         <MainContent
-          balance={suiBalance}
           onSend={handleSend}
           onDeposit={handleDeposit}
           // Falcon functionality

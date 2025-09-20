@@ -15,8 +15,6 @@ import { Transaction } from "@mysten/sui/transactions";
 import { HybridWallet } from "../lib/HybridWallet";
 import { useFalcon } from "./useFalcon";
 
-
-
 interface HybridWalletState {
   hybridWallet: HybridWallet | null;
   hybridWalletId: string | null;
@@ -158,16 +156,19 @@ export const HybridWalletProvider: React.FC<HybridWalletProviderProps> = ({
               onChainWalletId,
               walletObject.data.content
             );
-            
+
             // 로컬 정보와 병합
             await mergedWallet.init();
             mergedWallet.traditionalKey = accountAddress; // 현재 계정 주소 설정
-            
-            console.log('=== MERGED WALLET INFO ===');
-            console.log('Wallet after merge:', mergedWallet);
-            console.log('Traditional key:', mergedWallet.traditionalKey);
-            console.log('Local falcon key available:', !!mergedWallet.falconKey);
-            console.log('==========================');
+
+            console.log("=== MERGED WALLET INFO ===");
+            console.log("Wallet after merge:", mergedWallet);
+            console.log("Traditional key:", mergedWallet.traditionalKey);
+            console.log(
+              "Local falcon key available:",
+              !!mergedWallet.falconKey
+            );
+            console.log("==========================");
 
             // 상태 업데이트
             setHybridWallet(mergedWallet);
@@ -316,62 +317,6 @@ export const HybridWalletProvider: React.FC<HybridWalletProviderProps> = ({
         throw new Error("SUI 잔고가 부족합니다. (입금액 + 가스 예산 필요)");
       }
 
-    // 3) deposit 호출 (TxContext는 자동 주입)
-    tx.moveCall({
-      target: `${HYBRID_WALLET_CONTRACT}::hybrid_wallet::deposit`,
-      arguments: [
-        tx.object(hybridWalletId), // &mut HybridWallet
-        paymentCoin,               // Coin<SUI>
-      ],
-    });
-
-    // 4) 전송/확정/리프레시
-    await new Promise<void>((resolve, reject) => {
-      signAndExecuteTransaction(
-        { transaction: tx },
-        {
-          onSuccess: async (res) => {
-            try {
-              const digest =
-                (res as any).digest ??
-                (res as any).effects?.transactionDigest ??
-                res;
-              await suiClient.waitForTransaction({
-                digest,
-                options: {
-                  showEffects: true,
-                  showEvents: true,
-                  showObjectChanges: true,
-                },
-              });
-              await refreshHybridWallet();
-              resolve();
-            } catch (e) {
-              reject(e);
-            }
-          },
-          onError: (err) => reject(err),
-        }
-      );
-    });
-  } catch (e: any) {
-    console.error("[deposit] failed", e);
-    setError(e?.message ?? "Failed to deposit");
-    // ★ 실패를 호출측으로 전달해야 UI에서 성공 alert가 안 뜸
-    throw e;
-  } finally {
-    setIsLoading(false);
-  }
-};
- // 하이브리드 지갑 수이 송금
- const sendPayment = async (recipient: string, amount: bigint) => {
-  if (!currentAccount || !hybridWallet || !hybridWalletId) {
-    throw new Error("No account connected or hybrid wallet not initialized");
-  }
-
-  setIsLoading(true);
-  setError(null);
-   
       // 1) 트랜잭션 생성
       const tx = new Transaction();
       tx.setGasBudget(50_000_000n);
@@ -409,8 +354,6 @@ export const HybridWalletProvider: React.FC<HybridWalletProviderProps> = ({
                     showObjectChanges: true,
                   },
                 });
-                console.log("deposit 성공, 지갑 리프레시");
-
                 await refreshHybridWallet();
                 resolve();
               } catch (e) {
@@ -431,70 +374,128 @@ export const HybridWalletProvider: React.FC<HybridWalletProviderProps> = ({
     }
   };
 
-  try {
-    // 1. 메시지 준비
-    const txData = hybridWallet.encodePayment(
-      recipient,
-      amount,
-      hybridWallet.nonce
-    );
-    // 2. falcon 서명 생성
-    const { falconSig } = await hybridWallet.signPayment(txData);
-    // 3. ed25519 서명 생성
-    const ed25519Sig = await new Promise<Uint8Array>((resolve) => {
-      signPersonalMessage(
+  // 하이브리드 지갑 수이 송금
+  const sendPayment = async (recipient: string, amount: bigint) => {
+    if (!currentAccount || !hybridWallet || !hybridWalletId) {
+      throw new Error("No account connected or hybrid wallet not initialized");
+    }
+
+    setIsLoading(true);
+    setError(null);
+
+    // 1) 트랜잭션 생성
+    const tx = new Transaction();
+    tx.setGasBudget(50_000_000n);
+
+    // 2) 가스에서 amount만큼 분리 → Coin<SUI>
+    const [paymentCoin] = tx.splitCoins(tx.gas, [
+      tx.pure.u64(amount.toString()),
+    ]);
+
+    // 3) deposit 호출 (TxContext는 자동 주입)
+    tx.moveCall({
+      target: `${HYBRID_WALLET_CONTRACT}::hybrid_wallet::deposit`,
+      arguments: [
+        tx.object(hybridWalletId), // &mut HybridWallet
+        paymentCoin, // Coin<SUI>
+      ],
+    });
+
+    // 4) 전송/확정/리프레시
+    await new Promise<void>((resolve, reject) => {
+      signAndExecuteTransaction(
+        { transaction: tx },
         {
-          message: txData,
-        },
-        {
-          onSuccess: (signature) =>
-            resolve(
-              new Uint8Array(
-                atob(signature.bytes)
-                  .split("")
-                  .map((c) => c.charCodeAt(0))
-              )
-            ),
-          onError: (error) => resolve(new Uint8Array()),
+          onSuccess: async (res) => {
+            try {
+              const digest =
+                (res as any).digest ??
+                (res as any).effects?.transactionDigest ??
+                res;
+              await suiClient.waitForTransaction({
+                digest,
+                options: {
+                  showEffects: true,
+                  showEvents: true,
+                  showObjectChanges: true,
+                },
+              });
+              console.log("deposit 성공, 지갑 리프레시");
+
+              await refreshHybridWallet();
+              resolve();
+            } catch (e) {
+              reject(e);
+            }
+          },
+          onError: (err) => reject(err),
         }
       );
     });
 
-    // 2. 트랜잭션 생성
-    const tx = new Transaction();
-    tx.moveCall({
-      target: `${HYBRID_WALLET_CONTRACT}::hybrid_wallet::send_payment`,
-      arguments: [
-        tx.object(hybridWalletId),
-        tx.pure.address(recipient),
-        tx.pure.u64(amount.toString()),
-        tx.pure(new Uint8Array(ed25519Sig)),
-        tx.pure(new Uint8Array(falconSig)),
-      ],
-    });
-    signAndExecuteTransaction(
-      {
-        transaction: tx,
-      },
-      {
-        onSuccess: async (result) => {
-          console.log("Payment sent successfully:", result);
-          await refreshHybridWallet();
-        },
-        onError: (error) => {
-          console.error("Payment failed:", error);
-          setError(error.message || "Failed to send payment");
-        },
-      }
-    );
-  } catch (err) {
-    console.error("Failed to send payment:", err);
-    setError(err instanceof Error ? err.message : "Failed to send payment");
-  } finally {
-    setIsLoading(false);
-  }
-};
+    try {
+      // 1. 메시지 준비
+      const txData = hybridWallet.encodePayment(
+        recipient,
+        amount,
+        hybridWallet.nonce
+      );
+      // 2. falcon 서명 생성
+      const { falconSig } = await hybridWallet.signPayment(txData);
+      // 3. ed25519 서명 생성
+      const ed25519Sig = await new Promise<Uint8Array>((resolve) => {
+        signPersonalMessage(
+          {
+            message: txData,
+          },
+          {
+            onSuccess: (signature) =>
+              resolve(
+                new Uint8Array(
+                  atob(signature.bytes)
+                    .split("")
+                    .map((c) => c.charCodeAt(0))
+                )
+              ),
+            onError: (error) => resolve(new Uint8Array()),
+          }
+        );
+      });
 
+      // 2. 트랜잭션 생성
+      const tx = new Transaction();
+      tx.moveCall({
+        target: `${HYBRID_WALLET_CONTRACT}::hybrid_wallet::send_payment`,
+        arguments: [
+          tx.object(hybridWalletId),
+          tx.pure.address(recipient),
+          tx.pure.u64(amount.toString()),
+          tx.pure(new Uint8Array(ed25519Sig)),
+          tx.pure(new Uint8Array(falconSig)),
+        ],
+      });
+      signAndExecuteTransaction(
+        {
+          transaction: tx,
+        },
+        {
+          onSuccess: async (result) => {
+            console.log("Payment sent successfully:", result);
+            await refreshHybridWallet();
+          },
+          onError: (error) => {
+            console.error("Payment failed:", error);
+            setError(error.message || "Failed to send payment");
+          },
+        }
+      );
+    } catch (err) {
+      console.error("Failed to send payment:", err);
+      setError(err instanceof Error ? err.message : "Failed to send payment");
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   // 계정 변경 감지 및 하이브리드 지갑 로드
   useEffect(() => {
