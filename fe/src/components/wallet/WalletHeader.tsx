@@ -1,29 +1,40 @@
 import React from 'react';
-import { ConnectButton } from '@mysten/dapp-kit';
 
 export const WalletHeader: React.FC = () => {
   return (
     <div
       style={{
-        display: 'flex',
-        alignItems: 'center',
-        gap: '0.75rem', // 텍스트와 버튼 사이 간격
+        textAlign: 'center',
         marginBottom: '2rem',
         paddingBottom: '1rem',
         borderBottom: '1px solid rgba(0, 0, 0, 0.1)',
       }}
     >
-      <span
+      <h1
         style={{
-          fontSize: '0.9rem',
-          color: '#666',
-          fontWeight: '500',
+          fontSize: '2.2rem',
+          color: '#0099cc',
+          fontWeight: '600',
+          margin: '0',
+          background: 'linear-gradient(135deg, #0099cc, #00bcd4)',
+          backgroundClip: 'text',
+          WebkitBackgroundClip: 'text',
+          WebkitTextFillColor: 'transparent',
+          letterSpacing: '0.5px',
         }}
       >
-        Connected Account : 
-      </span>
-
-      <ConnectButton />
+        Your Coins
+      </h1>
+      <p
+        style={{
+          fontSize: '0.85rem',
+          color: '#666',
+          margin: '8px 0 0 0',
+          fontWeight: '400',
+        }}
+      >
+        Manage your digital assets
+      </p>
     </div>
   );
 };

@@ -11,6 +11,7 @@ import { WalletHeader } from './wallet/WalletHeader';
 import { WalletBalance } from './wallet/WalletBalance';
 import { WalletActions } from './wallet/WalletActions';
 import { TransferModal } from './wallet/TransferModal';
+import { AccountInfo } from './wallet/AccountInfo';
 
 interface WalletUIProps {
   // Optional props for additional customization
@@ -126,6 +127,9 @@ export const WalletUI: React.FC<WalletUIProps> = ({
   }
   return (
     <>
+      {/* Account Info in top-right corner */}
+      <AccountInfo />
+      
       <div
         className="wallet-container"
         style={{
