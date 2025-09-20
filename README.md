@@ -12,6 +12,18 @@ Sui-Falcon offers a robust, forward-looking security solution for the Sui ecosys
   - **Blockchain-Optimized**: Uses the `ethfalcon` variant with keccak256 hash function for Sui blockchain compatibility.
   - **Production Ready**: Features a comprehensive test suite and clear deployment instructions.
 
+## 🎥 Demo & Resources
+
+### 📹 Live Demo
+
+[📽️ **Sui-Falcon Demo - Youtube**](https://youtu.be/GXIX_QHDv4A?si=hVTDm4MK1HG9zByj)
+
+_Watch our comprehensive demo showcasing quantum-resistant transactions on Sui blockchain_
+
+### 📊 Pitch Deck
+
+[📈 **View Pitch Deck**](https://www.canva.com/design/DAGzbOf8Ctg/e2acuGvsG1nri4jOV_ZSHQ/view?utm_content=DAGzbOf8Ctg&utm_campaign=designshare&utm_medium=link2&utm_source=uniquelinks&utlId=h197008506b) - Complete project overview, technical architecture, and roadmap
+
 ## 🏗️ Project Structure
 
 ```
