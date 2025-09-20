@@ -301,9 +301,6 @@ Contributions are welcome\! Please follow these steps:
 4.  Ensure the entire test suite passes.
 5.  Submit a pull request with a clear description of your changes.
 
-## 📄 License
-
-This project is open-source. Please see the [LICENSE](https://www.google.com/search?q=LICENSE) file for details. Note that different components may be subject to different licenses.
 
 ## 🌟 Project Origins & Technical Background
 
