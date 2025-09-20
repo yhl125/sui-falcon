@@ -1,15 +1,28 @@
 import React from 'react';
+import { type FalconKeys } from '../../hooks/useFalcon';
 
 interface MainContentProps {
   balance: number;
   onSend?: () => void;
   onDeposit?: () => void;
+  // Falcon functionality
+  falconKeys?: FalconKeys | null;
+  isFalconReady?: boolean;
+  isGeneratingKeys?: boolean;
+  onGenerateFalconKeys?: () => void;
+  falconError?: string | null;
 }
 
 export const MainContent: React.FC<MainContentProps> = ({ 
   balance, 
   onSend, 
-  onDeposit 
+  onDeposit,
+  // Falcon functionality
+  falconKeys,
+  isFalconReady,
+  isGeneratingKeys,
+  onGenerateFalconKeys,
+  falconError
 }) => {
   const actionButtons = [
     { 
@@ -377,6 +390,216 @@ export const MainContent: React.FC<MainContentProps> = ({
           </div>
         </div>
       </div>
+
+      {/* Falcon Security Section */}
+      <div
+        style={{
+          background: 'rgba(51, 65, 85, 0.6)',
+          borderRadius: '12px',
+          padding: '16px',
+          color: 'white',
+          flex: '0 0 auto',
+          minHeight: '120px',
+          display: 'flex',
+          flexDirection: 'column',
+        }}
+      >
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            marginBottom: '12px',
+          }}
+        >
+          <h2
+            style={{
+              fontSize: '1.1rem',
+              fontWeight: '700',
+              margin: 0,
+              color: 'white',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+            }}
+          >
+            <div
+              style={{
+                width: '20px',
+                height: '20px',
+                color: '#40E0D0',
+              }}
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M12 2L2 7v10c0 5.55 3.84 9.74 9 10.86C16.16 26.74 20 22.55 20 17V7l-8-5z"/>
+              </svg>
+            </div>
+            Falcon Security
+          </h2>
+          
+          {/* Falcon Status Indicator */}
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              fontSize: '12px',
+              color: isFalconReady ? '#10B981' : '#6B7280',
+              fontWeight: '500',
+            }}
+          >
+            <div
+              style={{
+                width: '8px',
+                height: '8px',
+                borderRadius: '50%',
+                background: isFalconReady ? '#10B981' : '#6B7280',
+              }}
+            />
+            {isFalconReady ? 'Ready' : 'Initializing...'}
+          </div>
+        </div>
+
+        {/* Error Display */}
+        {falconError && (
+          <div style={{
+            background: 'rgba(239, 68, 68, 0.1)',
+            border: '1px solid rgba(239, 68, 68, 0.3)',
+            borderRadius: '8px',
+            padding: '8px',
+            color: '#EF4444',
+            fontSize: '12px',
+            marginBottom: '12px',
+          }}>
+            <strong>Error:</strong> {falconError}
+          </div>
+        )}
+
+        {/* Key Status and Generation */}
+        <div style={{ display: 'flex', gap: '12px', alignItems: 'center', flex: 1 }}>
+          {/* Key Status */}
+          <div style={{ flex: 1 }}>
+            <div style={{ fontSize: '14px', color: '#94A3B8', marginBottom: '4px' }}>
+              Quantum-Resistant Keys
+            </div>
+            <div style={{ fontSize: '16px', fontWeight: '600' }}>
+              {falconKeys ? (
+                <span style={{ color: '#10B981' }}>
+                  <svg 
+                    width="16" 
+                    height="16" 
+                    viewBox="0 0 24 24" 
+                    fill="currentColor" 
+                    style={{ display: 'inline', marginRight: '6px', verticalAlign: 'middle' }}
+                  >
+                    <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
+                  </svg>
+                  Keys Generated
+                </span>
+              ) : (
+                <span style={{ color: '#6B7280' }}>No Keys</span>
+              )}
+            </div>
+          </div>
+
+          {/* Generate Keys Button */}
+          <button
+            onClick={onGenerateFalconKeys}
+            disabled={!isFalconReady || isGeneratingKeys || !!falconKeys}
+            style={{
+              background: falconKeys 
+                ? 'rgba(16, 185, 129, 0.2)' 
+                : (!isFalconReady || isGeneratingKeys) 
+                  ? 'rgba(107, 114, 128, 0.5)'
+                  : 'rgba(64, 224, 208, 0.2)',
+              border: `1px solid ${falconKeys 
+                ? '#10B981' 
+                : (!isFalconReady || isGeneratingKeys) 
+                  ? '#6B7280'
+                  : '#40E0D0'}`,
+              borderRadius: '8px',
+              padding: '10px 16px',
+              color: falconKeys 
+                ? '#10B981' 
+                : (!isFalconReady || isGeneratingKeys) 
+                  ? '#6B7280'
+                  : '#40E0D0',
+              cursor: (!isFalconReady || isGeneratingKeys || !!falconKeys) ? 'not-allowed' : 'pointer',
+              fontSize: '12px',
+              fontWeight: '600',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              transition: 'all 0.2s ease',
+              opacity: (!isFalconReady || isGeneratingKeys || !!falconKeys) ? 0.6 : 1,
+            }}
+            onMouseEnter={(e) => {
+              if (isFalconReady && !isGeneratingKeys && !falconKeys) {
+                e.currentTarget.style.background = 'rgba(64, 224, 208, 0.3)';
+                e.currentTarget.style.transform = 'translateY(-1px)';
+              }
+            }}
+            onMouseLeave={(e) => {
+              if (isFalconReady && !isGeneratingKeys && !falconKeys) {
+                e.currentTarget.style.background = 'rgba(64, 224, 208, 0.2)';
+                e.currentTarget.style.transform = 'translateY(0)';
+              }
+            }}
+          >
+            {isGeneratingKeys ? (
+              <>
+                <div
+                  style={{
+                    width: '12px',
+                    height: '12px',
+                    border: '2px solid transparent',
+                    borderTop: '2px solid currentColor',
+                    borderRadius: '50%',
+                    animation: 'spin 1s linear infinite',
+                  }}
+                />
+                Generating...
+              </>
+            ) : falconKeys ? (
+              <>
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
+                </svg>
+                Generated
+              </>
+            ) : (
+              <>
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M7 14c-1.66 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3zm0-4c-.55 0-1 .45-1 1s.45 1 1 1 1-.45 1-1-.45-1-1-1zm12-3c-1.66 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3zm0-4c-.55 0-1 .45-1 1s.45 1 1 1 1-.45 1-1-.45-1-1-1zM19 10.5c-1.66 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3zm0-4c-.55 0-1 .45-1 1s.45 1 1 1 1-.45 1-1-.45-1-1-1z"/>
+                </svg>
+                Generate Keys
+              </>
+            )}
+          </button>
+        </div>
+
+        {/* Show key info when keys exist */}
+        {falconKeys && (
+          <div style={{
+            marginTop: '12px',
+            padding: '8px',
+            background: 'rgba(16, 185, 129, 0.1)',
+            borderRadius: '8px',
+            fontSize: '12px',
+            color: '#6EE7B7',
+          }}>
+            🔐 Post-quantum cryptographic keys are ready for secure transactions
+          </div>
+        )}
+      </div>
+
+      {/* CSS Animation for spinner */}
+      <style>{`
+        @keyframes spin {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
+        }
+      `}</style>
     </div>
   );
 };

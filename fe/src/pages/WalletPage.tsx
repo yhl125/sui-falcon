@@ -10,7 +10,7 @@ export const WalletPage: React.FC = () => {
   };
 
   return (
-    <UnderWaterScene>
+    <UnderWaterScene animationEnabled={true}>
       <WalletUI onDeposit={handleDeposit} />
     </UnderWaterScene>
   );
