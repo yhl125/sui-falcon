@@ -12,6 +12,7 @@ import { AccountInfo } from './wallet/AccountInfo';
 import { Sidebar } from './wallet/Sidebar';
 import { MainContent } from './wallet/MainContent';
 import { useFalcon, type FalconKeys } from '../hooks/useFalcon';
+import { useHybridWallet } from '../hooks/useHybridWalletContext';
 import { HybridWallet } from '../lib/HybridWallet';
 
 interface WalletUIProps {
@@ -23,6 +24,9 @@ export const WalletUI: React.FC<WalletUIProps> = ({
   onDeposit
 }) => {
   const currentAccount = useCurrentAccount();
+
+  // HybridWallet context
+  const { deposit, isLoading: isDepositLoading } = useHybridWallet();
   const [isTransferModalOpen, setIsTransferModalOpen] = useState(false);
   const [recipient, setRecipient] = useState('');
   const [amount, setAmount] = useState('');
@@ -129,6 +133,27 @@ export const WalletUI: React.FC<WalletUIProps> = ({
       alert('Failed to generate Falcon keys. Please try again.');
     } finally {
       setIsGeneratingKeys(false);
+    }
+  };
+
+  // Handle deposit functionality
+  const handleDeposit = async () => {
+    try {
+      const amountStr = prompt('입금할 SUI 수량을 입력하세요:');
+      if (!amountStr || amountStr.trim() === '') return;
+
+      const amountSui = parseFloat(amountStr);
+      if (isNaN(amountSui) || amountSui <= 0) {
+        alert('올바른 수량을 입력해주세요.');
+        return;
+      }
+
+      const amountMist = BigInt(Math.floor(amountSui * 1e9));
+      await deposit(amountMist);
+      alert(`${amountSui} SUI 입금이 완료되었습니다!`);
+    } catch (error: any) {
+      console.error('Deposit failed:', error);
+      alert(`입금 실패: ${error?.message || '알 수 없는 오류가 발생했습니다.'}`);
     }
   };
 
@@ -511,10 +536,10 @@ export const WalletUI: React.FC<WalletUIProps> = ({
       >
 
         {/* Main Content */}
-        <MainContent 
-          balance={suiBalance} 
+        <MainContent
+          balance={suiBalance}
           onSend={handleSend}
-          onDeposit={onDeposit}
+          onDeposit={handleDeposit}
           // Falcon functionality
           falconKeys={falconKeys}
           isFalconReady={isFalconReady}
