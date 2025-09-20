@@ -34,7 +34,7 @@ export const WalletUI: React.FC<WalletUIProps> = ({ onDeposit }) => {
   const currentAccount = useCurrentAccount();
 
   // HybridWallet context
-  const { deposit, isLoading: isDepositLoading } = useHybridWallet();
+  const { deposit, sendPayment, isLoading } = useHybridWallet();
   const [isTransferModalOpen, setIsTransferModalOpen] = useState(false);
   const [recipient, setRecipient] = useState("");
   const [amount, setAmount] = useState("");
@@ -118,6 +118,36 @@ export const WalletUI: React.FC<WalletUIProps> = ({ onDeposit }) => {
     setIsTransferModalOpen(true);
   };
 
+  // Validation helpers
+  const isValidAddress = (addr: string) => /^0x[0-9a-fA-F]{2,}$/.test(addr.trim());
+  const isValidAmount = (amt: string) => {
+    const num = parseFloat(amt);
+    return !isNaN(num) && num > 0;
+  };
+
+  // Check if send button should be enabled
+  const canSend = isValidAddress(recipient) && isValidAmount(amount) && !isLoading;
+
+  const handleSubmitSend = async () => {
+    try {
+      if (!canSend) return;
+
+      const recipientAddr = recipient.trim();
+      const amountSui = parseFloat(amount);
+      const amountMist = BigInt(Math.floor(amountSui * 1e9));
+
+      await sendPayment(recipientAddr, amountMist);
+
+      // Success: close modal and reset
+      setIsTransferModalOpen(false);
+      setRecipient('');
+      setAmount('');
+      alert('전송 완료!');
+    } catch (error: any) {
+      console.error('Send failed:', error);
+      alert(error?.message || '전송 실패');
+    }
+    
   const executeTransfer = () => {
     if (!currentAccount || !recipient || !amount) return;
 
@@ -632,8 +662,10 @@ export const WalletUI: React.FC<WalletUIProps> = ({ onDeposit }) => {
         amount={amount}
         onRecipientChange={setRecipient}
         onAmountChange={setAmount}
-        onConfirm={executeTransfer}
+        onConfirm={handleSubmitSend}
         onCancel={() => setIsTransferModalOpen(false)}
+        canSend={canSend}
+        isLoading={isLoading}
       />
     </>
   );
