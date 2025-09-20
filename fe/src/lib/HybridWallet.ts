@@ -11,28 +11,41 @@ export class HybridWallet {
 
   // 앱 시작 시 호출
   init() {
-    // 1. 기존 falcon private 키 확인
-    const storedPriv = localStorage.getItem("falconPrivateKey");
-    const storedPub = localStorage.getItem("falconPublicKey");
+    // 1. 실제 Falcon 키 확인 (falconKeys 형태로 저장된 것)
+    const storedFalconKeys = localStorage.getItem("falconKeys");
 
-    if (storedPriv && storedPub) {
-      // 이미 있으면 그대로 사용
-      this.falconKey = {
-        privateKey: storedPriv,
-        publicKey: storedPub,
-      };
+    if (storedFalconKeys) {
+      try {
+        // 실제 Falcon 키가 있으면 사용
+        const keys = JSON.parse(storedFalconKeys);
+        this.falconKey = {
+          privateKey: keys.privateKey,
+          publicKey: keys.publicKey,
+        };
+        console.log('✅ HybridWallet: Loaded existing Falcon keys');
+      } catch (error) {
+        console.error('❌ HybridWallet: Failed to parse Falcon keys:', error);
+        this.falconKey = null;
+      }
     } else {
-      // 없으면 새로 생성 (dummy)
-      const newFalconKey = {
-        privateKey: crypto.randomUUID(), // 임시 dummy 값
-        publicKey: "falcon_pub_" + Math.random().toString(36).slice(2),
-      };
-      this.falconKey = newFalconKey;
-
-      // localStorage에 저장
-      localStorage.setItem("falconPrivateKey", newFalconKey.privateKey);
-      localStorage.setItem("falconPublicKey", newFalconKey.publicKey);
+      // Falcon 키가 없으면 null로 설정 (더미 생성하지 않음)
+      this.falconKey = null;
+      console.log('⚠️ HybridWallet: No Falcon keys found - user needs to generate them');
     }
+  }
+
+  // Falcon 키 존재 여부 확인
+  hasFalconKeys(): boolean {
+    return this.falconKey !== null;
+  }
+
+  // Falcon 키 설정 (외부에서 생성된 키를 설정할 때 사용)
+  setFalconKeys(privateKey: string, publicKey: string) {
+    this.falconKey = {
+      privateKey,
+      publicKey,
+    };
+    console.log('✅ HybridWallet: Falcon keys updated');
   }
 
   // 키 생성 (Ed25519 + Falcon)
