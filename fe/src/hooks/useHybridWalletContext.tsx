@@ -30,6 +30,8 @@ interface HybridWalletState {
   sendPayment: (recipient: string, amount: bigint) => Promise<void>;
   // 하이브리드 지갑 로드 함수
   loadHybridWalletForAccount: (accoutAddress: string) => Promise<void>;
+  // 하이브리드 지갑 예치 함수
+  deposit: (amount: bigint) => Promise<void>;
 }
 
 const HybridWalletContext = createContext<HybridWalletState | undefined>(
@@ -60,15 +62,15 @@ export const HybridWalletProvider: React.FC<HybridWalletProviderProps> = ({
   const [error, setError] = useState<string | null>(null);
 
   // 계정별 하이브리드 지갑 데이터 캐시
-  const [walletCache, setWalletCache] = useState<
-    Map<
-      string,
-      {
-        wallet: HybridWallet;
-        walletId: string | null;
-      }
-    >
-  >(new Map());
+  // const [walletCache, setWalletCache] = useState<
+  //   Map<
+  //     string,
+  //     {
+  //       wallet: HybridWallet;
+  //       walletId: string | null;
+  //     }
+  //   >
+  // >(new Map());
 
   // 하이브리드 지갑 로드
   const loadHybridWalletForAccount = async (accountAddress: string) => {
@@ -78,14 +80,15 @@ export const HybridWalletProvider: React.FC<HybridWalletProviderProps> = ({
 
     try {
       // 1. 캐시에서 먼저 확인
-      const cached = walletCache.get(accountAddress);
-      if (cached) {
-        setHybridWallet(cached.wallet);
-        setHybridWalletId(cached.walletId);
-        setHasHybridWallet(!!cached.walletId);
-        setIsLoading(false);
-        return;
-      }
+      // const cached = walletCache.get(accountAddress);
+      // console.log("캐시: ", cached);
+      // if (cached) {
+      //   setHybridWallet(cached.wallet);
+      //   setHybridWalletId(cached.walletId);
+      //   setHasHybridWallet(!!cached.walletId);
+      //   setIsLoading(false);
+      //   return;
+      // }
 
       // 2. HybridWallet 인스턴스 생성 및 초기화
       const localWallet = new HybridWallet();
@@ -170,12 +173,12 @@ export const HybridWalletProvider: React.FC<HybridWalletProviderProps> = ({
             setHasHybridWallet(true);
 
             // 5. 캐시에 저장
-            setWalletCache((prev) =>
-              new Map(prev).set(accountAddress, {
-                wallet: mergedWallet,
-                walletId: onChainWalletId,
-              })
-            );
+            // setWalletCache((prev) =>
+            //   new Map(prev).set(accountAddress, {
+            //     wallet: mergedWallet,
+            //     walletId: onChainWalletId,
+            //   })
+            // );
           }
         } catch (error) {
           console.error("Failed to fetch hybrid wallet object:", error);
@@ -281,13 +284,92 @@ export const HybridWalletProvider: React.FC<HybridWalletProviderProps> = ({
   const refreshHybridWallet = async () => {
     if (currentAccount?.address) {
       // 캐시 클리어 후 다시 로드
-      setWalletCache((prev) => {
-        const newCache = new Map(prev);
-        newCache.delete(currentAccount.address);
-        return newCache;
-      });
+      // setWalletCache((prev) => {
+      //   const newCache = new Map(prev);
+      //   newCache.delete(currentAccount.address);
+      //   return newCache;
+      // });
 
       await loadHybridWalletForAccount(currentAccount.address);
+    }
+  };
+
+  // 하이브리드 지갑 예치 (SUI)
+  const deposit = async (amount: bigint) => {
+    if (!currentAccount?.address || !hybridWalletId) {
+      throw new Error("Wallet not ready");
+    }
+
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      // (선택) 잔고 체크
+      const bal = await suiClient.getBalance({
+        owner: currentAccount.address,
+        coinType: "0x2::sui::SUI",
+      });
+      const need = amount + 50_000_000n; // 가스 예산 포함 대략치
+      if (BigInt(bal.totalBalance) < need) {
+        throw new Error("SUI 잔고가 부족합니다. (입금액 + 가스 예산 필요)");
+      }
+
+      // 1) 트랜잭션 생성
+      const tx = new Transaction();
+      tx.setGasBudget(50_000_000n);
+
+      // 2) 가스에서 amount만큼 분리 → Coin<SUI>
+      const [paymentCoin] = tx.splitCoins(tx.gas, [
+        tx.pure.u64(amount.toString()),
+      ]);
+
+      // 3) deposit 호출 (TxContext는 자동 주입)
+      tx.moveCall({
+        target: `${HYBRID_WALLET_CONTRACT}::hybrid_wallet::deposit`,
+        arguments: [
+          tx.object(hybridWalletId), // &mut HybridWallet
+          paymentCoin, // Coin<SUI>
+        ],
+      });
+
+      // 4) 전송/확정/리프레시
+      await new Promise<void>((resolve, reject) => {
+        signAndExecuteTransaction(
+          { transaction: tx },
+          {
+            onSuccess: async (res) => {
+              try {
+                const digest =
+                  (res as any).digest ??
+                  (res as any).effects?.transactionDigest ??
+                  res;
+                await suiClient.waitForTransaction({
+                  digest,
+                  options: {
+                    showEffects: true,
+                    showEvents: true,
+                    showObjectChanges: true,
+                  },
+                });
+                console.log("deposit 성공, 지갑 리프레시");
+
+                await refreshHybridWallet();
+                resolve();
+              } catch (e) {
+                reject(e);
+              }
+            },
+            onError: (err) => reject(err),
+          }
+        );
+      });
+    } catch (e: any) {
+      console.error("[deposit] failed", e);
+      setError(e?.message ?? "Failed to deposit");
+      // ★ 실패를 호출측으로 전달해야 UI에서 성공 alert가 안 뜸
+      throw e;
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -387,6 +469,7 @@ export const HybridWalletProvider: React.FC<HybridWalletProviderProps> = ({
     refreshHybridWallet,
     sendPayment,
     loadHybridWalletForAccount,
+    deposit,
   };
 
   return (

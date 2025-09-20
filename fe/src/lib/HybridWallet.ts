@@ -138,7 +138,7 @@ export class HybridWallet {
     console.log('Treasury:', wallet.treasury);
     console.log('Nonce:', wallet.nonce);
     console.log('=============================');
-    
+
     return wallet;
   }
 
