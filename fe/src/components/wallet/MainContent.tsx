@@ -19,30 +19,87 @@ export const MainContent: React.FC<MainContentProps> = ({
   isFalconReady,
   falconError,
 }) => {
-  const walletAddress = '0xa249e...18ce'; // 실제 지갑 주소로 변경 필요
+   // 실제 지갑 주소로 변경 필요
 
   return (
     <div style={{ position: 'relative', width: '100%', height: '100%' }}>
-      {/* 🔆 White glow behind the card */}
+      {/* 🌟 Outer glow */}
       <div
         style={{
           position: 'absolute',
           top: '50%',
           left: '50%',
           transform: 'translate(-50%, -50%)',
-          width: 520, // 카드보다 살짝 크게
+          width: 550, // 살짝 줄임
+          height: 340,
+          pointerEvents: 'none',
+          zIndex: 0,
+          background: `
+            radial-gradient(closest-side, 
+              rgba(64, 224, 208, 0.7), 
+              rgba(32, 178, 170, 0.5) 40%, 
+              rgba(20, 184, 166, 0.3) 60%, 
+              rgba(16, 185, 129, 0.2) 80%, 
+              transparent 95%
+            )
+          `,
+          filter: 'blur(35px)',
+          opacity: 0.9,
+          animation: 'staticGlow 3s ease-in-out infinite',
+        }}
+      />
+      
+      {/* 🌟 Middle glow layer */}
+      <div
+        style={{
+          position: 'absolute',
+          top: '50%',
+          left: '50%',
+          transform: 'translate(-50%, -50%)',
+          width: 500,
           height: 300,
           pointerEvents: 'none',
           zIndex: 0,
-          // 중앙이 가장 밝고 바깥이 사라지는 흰색 오라
-          background:
-            'radial-gradient(closest-side, rgba(255,255,255,0.9), rgba(255,255,255,0.45) 50%, transparent 70%)',
-          filter: 'blur(28px)', // 퍼짐 정도 (키워드!)
-          opacity: 0.8, // 전체 강도
+          background: `
+            radial-gradient(closest-side, 
+              rgba(224, 255, 255, 0.6), 
+              rgba(64, 224, 208, 0.4) 50%, 
+              rgba(32, 178, 170, 0.3) 70%, 
+              transparent 85%
+            )
+          `,
+          filter: 'blur(20px)',
+          opacity: 0.8,
+          animation: 'staticGlow 3s ease-in-out infinite 0.3s',
+        }}
+      />
+      
+      {/* 🌟 Inner bright core */}
+      <div
+        style={{
+          position: 'absolute',
+          top: '50%',
+          left: '50%',
+          transform: 'translate(-50%, -50%)',
+          width: 470,
+          height: 270,
+          pointerEvents: 'none',
+          zIndex: 0,
+          background: `
+            radial-gradient(closest-side, 
+              rgba(255, 255, 255, 0.5), 
+              rgba(224, 255, 255, 0.3) 30%, 
+              rgba(64, 224, 208, 0.2) 60%, 
+              transparent 80%
+            )
+          `,
+          filter: 'blur(10px)',
+          opacity: 0.7,
+          animation: 'staticGlow 3s ease-in-out infinite 0.6s',
         }}
       />
 
-      {/* 🧊 The card (now actually white, not just transparent) */}
+      {/* 🧊 The card with intense shimmer effect */}
       <div
         style={{
           position: 'absolute',
@@ -54,15 +111,22 @@ export const MainContent: React.FC<MainContentProps> = ({
           minHeight: 220,
           padding: 32,
           borderRadius: 16,
-          // 진짜 흰색에 가까운 반투명 (투명도 너무 낮으면 “투명해 보이기만” 함)
-          background: 'rgba(255,255,255,0.88)',
-          // 글래스 느낌을 조금만 (옵션)
-          backdropFilter: 'blur(6px)',
-          WebkitBackdropFilter: 'blur(6px)',
-          // 살짝의 그림자(글로우와 겹쳐 깊이감)
-          boxShadow: '0 10px 35px rgba(0,0,0,0.18)',
-          border: '1px solid rgba(255,255,255,0.7)',
+          // 더 밝은 글래스 모피즘 배경
+          background: 'rgba(255, 255, 255, 0.95)',
+          backdropFilter: 'blur(25px)',
+          WebkitBackdropFilter: 'blur(25px)',
+          // 강렬한 빛나는 테두리와 그림자
+          boxShadow: `
+            0 0 25px rgba(64, 224, 208, 0.6),
+            0 0 50px rgba(32, 178, 170, 0.4),
+            0 0 75px rgba(20, 184, 166, 0.3),
+            0 15px 45px rgba(0, 0, 0, 0.1),
+            inset 0 1px 0 rgba(255, 255, 255, 0.9),
+            inset 0 0 20px rgba(224, 255, 255, 0.3)
+          `,
+          border: '2px solid rgba(64, 224, 208, 0.7)',
           color: '#1F2937',
+          animation: 'cardStaticGlow 4s ease-in-out infinite', // 움직임 없는 글로우만
         }}
       >
         {/* Balance Section */}
@@ -80,29 +144,6 @@ export const MainContent: React.FC<MainContentProps> = ({
             }}
           >
             ${balance.toFixed(3)}
-          </div>
-          <div
-            style={{
-              fontSize: '18px',
-              color: '#8b92a0',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '10px',
-            }}
-          >
-            {walletAddress}
-            <button
-              style={{
-                background: 'none',
-                border: 'none',
-                color: '#8b92a0',
-                cursor: 'pointer',
-                padding: '4px',
-              }}
-            >
-              📋
-            </button>
           </div>
         </div>
 
@@ -179,7 +220,7 @@ export const MainContent: React.FC<MainContentProps> = ({
             style={{
               fontSize: '18px',
               fontWeight: '600',
-              color: '#ffffff',
+              color: '#2d2e3a',
               cursor: 'pointer',
               paddingBottom: '10px',
               borderBottom: '2px solid #4a9eff',
@@ -259,6 +300,43 @@ export const MainContent: React.FC<MainContentProps> = ({
           </div>
         </div>
       </div>
+
+      {/* CSS Animations */}
+      <style>{`
+        @keyframes staticGlow {
+          0%, 100% {
+            opacity: 0.7;
+            filter: blur(35px);
+          }
+          50% {
+            opacity: 1;
+            filter: blur(30px);
+          }
+        }
+
+        @keyframes cardStaticGlow {
+          0%, 100% {
+            box-shadow: 
+              0 0 25px rgba(64, 224, 208, 0.6),
+              0 0 50px rgba(32, 178, 170, 0.4),
+              0 0 75px rgba(20, 184, 166, 0.3),
+              0 15px 45px rgba(0, 0, 0, 0.1),
+              inset 0 1px 0 rgba(255, 255, 255, 0.9),
+              inset 0 0 20px rgba(224, 255, 255, 0.3);
+            border: 2px solid rgba(64, 224, 208, 0.7);
+          }
+          50% {
+            box-shadow: 
+              0 0 35px rgba(64, 224, 208, 0.8),
+              0 0 70px rgba(32, 178, 170, 0.6),
+              0 0 105px rgba(20, 184, 166, 0.4),
+              0 15px 45px rgba(0, 0, 0, 0.1),
+              inset 0 2px 0 rgba(255, 255, 255, 0.95),
+              inset 0 0 30px rgba(224, 255, 255, 0.5);
+            border: 2px solid rgba(64, 224, 208, 0.9);
+          }
+        }
+      `}</style>
     </div>
   );
 };
