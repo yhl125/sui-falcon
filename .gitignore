@@ -22,7 +22,7 @@ python-ref/private_key.pem
 python-ref/myenv/
 /script/deploy_privateVerifier.sh
 /script/deploy_privateFalcon.sh
-python-ref/__pycache__/
+__pycache__/
 
 # C built files
 falcon/nistfalcon/build/*.o

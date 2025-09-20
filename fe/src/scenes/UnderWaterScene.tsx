@@ -1,5 +1,4 @@
-import React, { useRef, useEffect, useCallback, useState } from 'react';
-import WalletUI from './WalletUI';
+import React, { useRef, useEffect, useCallback } from 'react';
 
 interface Bubble {
   x: number;
@@ -20,11 +19,15 @@ interface CausticRay {
 }
 
 
-export const UnderWaterScene: React.FC = () => {
+interface UnderWaterSceneProps {
+  children?: React.ReactNode;
+  animationEnabled?: boolean; // Control whether bubbles animate
+}
+
+export const UnderWaterScene: React.FC<UnderWaterSceneProps> = ({ children, animationEnabled = true }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animationFrameRef = useRef<number | undefined>(undefined);
   const lastTimeRef = useRef<number>(0);
-  const [showWalletUI, setShowWalletUI] = useState(false);
 
   // Animation state
   const bubblesRef = useRef<Bubble[]>([]);
@@ -49,14 +52,14 @@ export const UnderWaterScene: React.FC = () => {
     buttonText: '#FFFFFF'
   };
 
-  // Initialize bubbles
-  const initializeBubbles = useCallback((width: number, height: number) => {
+  // Initialize bubbles (start them off-screen when animation is disabled)
+  const initializeBubbles = useCallback((width: number, height: number, shouldAnimate: boolean = true) => {
     const bubbles: Bubble[] = [];
-    for (let i = 0; i < 25; i++) {
+    for (let i = 0; i < 18; i++) { // Reduced from 25 to 18 for better performance
       bubbles.push({
         x: Math.random() * width,
-        y: height + Math.random() * 200, // Start below screen
-        size: Math.random() * 8 + 2,
+        y: shouldAnimate ? height + Math.random() * 200 : height + 100 + i * 50, // Start far below screen when animation disabled
+        size: Math.random() * 13 + 3,
         speed: Math.random() * 0.5 + 0.3,
         opacity: Math.random() * 0.6 + 0.4,
         wobble: Math.random() * Math.PI * 2
@@ -92,21 +95,28 @@ export const UnderWaterScene: React.FC = () => {
     ctx.fillRect(0, 0, width, height);
   }, [colors]);
 
-  // Draw animated bubbles
-  const drawBubbles = useCallback((ctx: CanvasRenderingContext2D, width: number, height: number, deltaTime: number) => {
+  // Draw animated bubbles with animation control
+  const drawBubbles = useCallback((ctx: CanvasRenderingContext2D, width: number, height: number, deltaTime: number, shouldAnimate: boolean) => {
     bubblesRef.current.forEach((bubble, index) => {
-      // Update bubble position
-      bubble.y -= bubble.speed * deltaTime;
-      bubble.wobble += 0.02 * deltaTime;
-      bubble.x += Math.sin(bubble.wobble) * 0.5;
+      // Only update bubble position if animation is enabled
+      if (shouldAnimate) {
+        // Normalize deltaTime to prevent stuttering during heavy operations
+        const normalizedDelta = Math.min(deltaTime, 16.67); // Cap at 60fps equivalent
+        const speedMultiplier = normalizedDelta / 16.67; // Normalize to 60fps baseline
+        
+        bubble.y -= bubble.speed * normalizedDelta * 0.4; // Slower movement
+        bubble.wobble += 0.02 * normalizedDelta * 0.1;
+        bubble.x += Math.sin(bubble.wobble) * 0.3 * speedMultiplier;
 
-      // Reset bubble if it goes off screen
-      if (bubble.y < -20) {
-        bubble.y = height + 20;
-        bubble.x = Math.random() * width;
+        // Reset bubble if it goes off screen
+        if (bubble.y < -20) {
+          bubble.y = height + Math.random() * 50 + 20;
+          bubble.x = Math.random() * width;
+          bubble.wobble = Math.random() * Math.PI * 2;
+        }
       }
 
-      // Draw bubble with pixel art style
+      // Always draw bubbles, but they stay in place if animation is disabled
       ctx.save();
       ctx.globalAlpha = bubble.opacity;
 
@@ -116,11 +126,13 @@ export const UnderWaterScene: React.FC = () => {
       ctx.arc(bubble.x, bubble.y, bubble.size, 0, Math.PI * 2);
       ctx.fill();
 
-      // Bubble highlight
-      ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
-      ctx.beginPath();
-      ctx.arc(bubble.x - bubble.size * 0.3, bubble.y - bubble.size * 0.3, bubble.size * 0.3, 0, Math.PI * 2);
-      ctx.fill();
+      // Bubble highlight (only for larger bubbles to improve performance)
+      if (bubble.size > 6) {
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
+        ctx.beginPath();
+        ctx.arc(bubble.x - bubble.size * 0.3, bubble.y - bubble.size * 0.3, bubble.size * 0.3, 0, Math.PI * 2);
+        ctx.fill();
+      }
 
       ctx.restore();
     });
@@ -206,111 +218,39 @@ export const UnderWaterScene: React.FC = () => {
     ctx.restore();
   }, [colors]);
 
-  // Draw floating buttons
-  const drawFloatingButtons = useCallback((ctx: CanvasRenderingContext2D, width: number, height: number, time: number) => {
-    const centerX = width / 2;
-    const centerY = height / 2 + 80;
 
-    const buttons = [
-      {
-        text: 'Create Wallet',
-        x: centerX - 110,
-        y: centerY,
-        width: 220,
-        height: 50,
-        floatOffset: Math.sin(time * 0.001) * 8
-      },
-      {
-        text: 'Login',
-        x: centerX - 110,
-        y: centerY + 70,
-        width: 220,
-        height: 50,
-        floatOffset: Math.sin(time * 0.001 + Math.PI / 3) * 8
-      }
-    ];
 
-    buttons.forEach((button) => {
-      ctx.save();
-
-      const buttonY = button.y + button.floatOffset;
-
-      // Button shadow
-      ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
-      ctx.fillRect(button.x + 3, buttonY + 3, button.width, button.height);
-
-      // Button background
-      ctx.fillStyle = colors.buttonBg;
-      ctx.fillRect(button.x, buttonY, button.width, button.height);
-
-      // Button border
-      ctx.strokeStyle = colors.buttonBorder;
-      ctx.lineWidth = 2;
-      ctx.strokeRect(button.x, buttonY, button.width, button.height);
-
-      // Button text
-      ctx.fillStyle = colors.buttonText;
-      ctx.font = 'bold 16px monospace';
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillText(button.text, button.x + button.width / 2, buttonY + button.height / 2);
-
-      ctx.restore();
-    });
-  }, [colors]);
-
-  // Handle canvas clicks for buttons
-  const handleCanvasClick = useCallback((event: MouseEvent) => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-
-    const rect = canvas.getBoundingClientRect();
-    const x = event.clientX - rect.left;
-    const y = event.clientY - rect.top;
-
-    const centerX = canvas.width / 2;
-    const centerY = canvas.height / 2 + 80;
-
-    // Check Create Wallet button
-    if (x >= centerX - 110 && x <= centerX + 110 && y >= centerY && y <= centerY + 50) {
-      setShowWalletUI(true);
-    }
-
-    // Check Login button
-    if (x >= centerX - 110 && x <= centerX + 110 && y >= centerY + 70 && y <= centerY + 120) {
-      setShowWalletUI(true);
-    }
-  }, []);
-
-  // Main animation loop
+  // Main animation loop with improved scheduling
   const animate = useCallback((timestamp: number) => {
     const canvas = canvasRef.current;
-    if (!canvas) return;
+    if (!canvas) {
+      animationFrameRef.current = requestAnimationFrame(animate);
+      return;
+    }
 
     const ctx = canvas.getContext('2d');
-    if (!ctx) return;
+    if (!ctx) {
+      animationFrameRef.current = requestAnimationFrame(animate);
+      return;
+    }
 
     const deltaTime = timestamp - lastTimeRef.current;
     lastTimeRef.current = timestamp;
     timeRef.current = timestamp;
 
+    // Limit frame rate to avoid excessive CPU usage during heavy operations
+    const maxDelta = 1000 / 30; // 30 FPS minimum
+    const clampedDelta = Math.min(deltaTime, maxDelta);
+
     // Clear canvas and draw ocean gradient
     drawOceanGradient(ctx, canvas.width, canvas.height);
 
-    // Draw caustic light rays
-    drawCaustics(ctx, canvas.width, canvas.height, timestamp);
+    // Draw floating bubbles with animation control
+    drawBubbles(ctx, canvas.width, canvas.height, clampedDelta, animationEnabled);
 
-    // Draw floating bubbles
-    drawBubbles(ctx, canvas.width, canvas.height, deltaTime);
-
-    // Draw floating SuiQ text
-    drawFloatingText(ctx, canvas.width, canvas.height, timestamp);
-
-    // Draw floating buttons
-    drawFloatingButtons(ctx, canvas.width, canvas.height, timestamp);
-
+    // Schedule next frame with priority for smooth animation
     animationFrameRef.current = requestAnimationFrame(animate);
-  }, [drawOceanGradient, drawCaustics, drawBubbles, drawFloatingText, drawFloatingButtons]);
+  }, [drawOceanGradient, drawCaustics, drawBubbles, drawFloatingText, animationEnabled]);
 
   // Canvas setup and initialization
   useEffect(() => {
@@ -328,37 +268,38 @@ export const UnderWaterScene: React.FC = () => {
       }
 
       // Initialize particles
-      initializeBubbles(canvas.width, canvas.height);
+      initializeBubbles(canvas.width, canvas.height, animationEnabled);
       initializeCaustics(canvas.width);
     };
 
     resizeCanvas();
     window.addEventListener('resize', resizeCanvas);
-    canvas.addEventListener('click', handleCanvasClick);
 
     // Start animation
     animationFrameRef.current = requestAnimationFrame(animate);
 
     return () => {
       window.removeEventListener('resize', resizeCanvas);
-      canvas.removeEventListener('click', handleCanvasClick);
       if (animationFrameRef.current) {
         cancelAnimationFrame(animationFrameRef.current);
       }
     };
-  }, [animate, initializeBubbles, initializeCaustics, handleCanvasClick]);
+  }, [animate, initializeBubbles, initializeCaustics]);
 
-  if (showWalletUI) {
-    return <WalletUI visible={true} opacity={1} />;
-  }
+  // Re-initialize bubbles when animation is enabled/disabled
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    
+    initializeBubbles(canvas.width, canvas.height, animationEnabled);
+  }, [animationEnabled, initializeBubbles]);
 
   return (
     <div style={{
       position: 'relative',
       width: '100vw',
       height: '100vh',
-      overflow: 'hidden',
-      cursor: 'pointer'
+      overflow: 'hidden'
     }}>
       <canvas
         ref={canvasRef}
@@ -367,6 +308,7 @@ export const UnderWaterScene: React.FC = () => {
           imageRendering: 'pixelated'
         }}
       />
+      {children}
     </div>
   );
 };
