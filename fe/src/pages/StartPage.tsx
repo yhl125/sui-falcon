@@ -40,7 +40,7 @@ export const StartPage: React.FC<StartPageProps> = ({ onStart }) => {
           <h1
             style={{
               fontSize: 'clamp(2.5rem, 8vw, 6rem)',
-              fontFamily: 'monospace',
+              fontFamily: 'Nostalgia, monospace',
               fontWeight: 'bold',
               color: '#E0FFFF',
               textShadow: `
