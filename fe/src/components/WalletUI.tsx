@@ -7,11 +7,10 @@ import {
 } from '@mysten/dapp-kit';
 import { Transaction } from '@mysten/sui/transactions';
 import { MIST_PER_SUI } from '@mysten/sui/utils';
-import { WalletHeader } from './wallet/WalletHeader';
-import { WalletBalance } from './wallet/WalletBalance';
-import { WalletActions } from './wallet/WalletActions';
 import { TransferModal } from './wallet/TransferModal';
 import { AccountInfo } from './wallet/AccountInfo';
+import { Sidebar } from './wallet/Sidebar';
+import { MainContent } from './wallet/MainContent';
 
 interface WalletUIProps {
   // Optional props for additional customization
@@ -130,41 +129,35 @@ export const WalletUI: React.FC<WalletUIProps> = ({
       {/* Account Info in top-right corner */}
       <AccountInfo />
       
+      {/* Slash-style Wallet Container */}
       <div
-        className="wallet-container"
         style={{
           position: 'absolute',
           top: '50%',
           left: '50%',
           transform: 'translate(-50%, -50%)',
-          background: 'rgba(255, 255, 255, 0.9)',
-          padding: '2rem',
-          borderRadius: '20px',
-          boxShadow: '0 20px 60px rgba(0, 0, 0, 0.2)',
-          backdropFilter: 'blur(20px)',
-          width: '90%',
-          maxWidth: '600px',
-          minWidth: '320px',
-          color: '#333',
+          width: '70vw',
+          height: '75vh',
+          maxWidth: '1200px',
+          maxHeight: '800px',
+          minWidth: '900px',
+          minHeight: '600px',
+          borderRadius: '24px',
+          overflow: 'hidden',
+          boxShadow: '0 32px 80px rgba(0, 0, 0, 0.3)',
+          display: 'flex',
           fontFamily: '"Inter", "Segoe UI", sans-serif',
-          animation: 'walletFloat 4s ease-in-out infinite'
         }}
       >
-        <WalletHeader />
-        <WalletBalance balance={suiBalance} />
-        <WalletActions onDeposit={onDeposit} onSend={handleSend} />
-
-        {/* CSS keyframes for floating animation */}
-        <style>{`
-          @keyframes walletFloat {
-            0%, 100% {
-              transform: translate(-50%, -50%) translateY(0px);
-            }
-            50% {
-              transform: translate(-50%, -50%) translateY(-10px);
-            }
-          }
-        `}</style>
+        {/* Sidebar */}
+        <Sidebar currentAccount={currentAccount} />
+        
+        {/* Main Content */}
+        <MainContent 
+          balance={suiBalance} 
+          onSend={handleSend}
+          onDeposit={onDeposit}
+        />
       </div>
 
       <TransferModal
