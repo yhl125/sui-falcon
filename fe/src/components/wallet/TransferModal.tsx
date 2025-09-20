@@ -8,6 +8,8 @@ interface TransferModalProps {
   onAmountChange: (value: string) => void;
   onConfirm: () => void;
   onCancel: () => void;
+  canSend?: boolean;
+  isLoading?: boolean;
 }
 
 export const TransferModal: React.FC<TransferModalProps> = ({
@@ -17,11 +19,11 @@ export const TransferModal: React.FC<TransferModalProps> = ({
   onRecipientChange,
   onAmountChange,
   onConfirm,
-  onCancel
+  onCancel,
+  canSend = false,
+  isLoading = false
 }) => {
   if (!isOpen) return null;
-
-  const isValid = recipient && amount;
 
   return (
     <div style={{
@@ -131,20 +133,20 @@ export const TransferModal: React.FC<TransferModalProps> = ({
           </button>
           <button
             onClick={onConfirm}
-            disabled={!isValid}
+            disabled={!canSend}
             style={{
-              background: isValid ? '#0099cc' : '#ccc',
+              background: canSend ? '#0099cc' : '#ccc',
               color: 'white',
               border: 'none',
               padding: '0.75rem',
               borderRadius: '8px',
-              cursor: isValid ? 'pointer' : 'not-allowed',
+              cursor: canSend ? 'pointer' : 'not-allowed',
               fontSize: '1rem',
               fontWeight: '500',
               transition: 'all 0.2s ease'
             }}
           >
-            Send
+            {isLoading ? 'Sending...' : 'Send'}
           </button>
         </div>
       </div>

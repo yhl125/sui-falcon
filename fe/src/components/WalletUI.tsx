@@ -26,7 +26,7 @@ export const WalletUI: React.FC<WalletUIProps> = ({
   const currentAccount = useCurrentAccount();
 
   // HybridWallet context
-  const { deposit, isLoading: isDepositLoading } = useHybridWallet();
+  const { deposit, sendPayment, isLoading } = useHybridWallet();
   const [isTransferModalOpen, setIsTransferModalOpen] = useState(false);
   const [recipient, setRecipient] = useState('');
   const [amount, setAmount] = useState('');
@@ -80,34 +80,35 @@ export const WalletUI: React.FC<WalletUIProps> = ({
     setIsTransferModalOpen(true);
   };
 
-  const executeTransfer = () => {
-    if (!currentAccount || !recipient || !amount) return;
+  // Validation helpers
+  const isValidAddress = (addr: string) => /^0x[0-9a-fA-F]{2,}$/.test(addr.trim());
+  const isValidAmount = (amt: string) => {
+    const num = parseFloat(amt);
+    return !isNaN(num) && num > 0;
+  };
 
-    const tx = new Transaction();
-    const [coin] = tx.splitCoins(tx.gas, [
-      tx.pure.u64(Number(amount) * Number(MIST_PER_SUI))
-    ]);
-    tx.transferObjects([coin], tx.pure.address(recipient));
+  // Check if send button should be enabled
+  const canSend = isValidAddress(recipient) && isValidAmount(amount) && !isLoading;
 
-    signAndExecuteTransaction(
-      {
-        transaction: tx,
-        chain: 'sui:devnet',
-      },
-      {
-        onSuccess: (result) => {
-          console.log('Transfer successful:', result.digest);
-          setIsTransferModalOpen(false);
-          setRecipient('');
-          setAmount('');
-          alert(`Transfer successful! Transaction: ${result.digest}`);
-        },
-        onError: (error) => {
-          console.error('Transfer failed:', error);
-          alert('Transfer failed. Please try again.');
-        },
-      }
-    );
+  const handleSubmitSend = async () => {
+    try {
+      if (!canSend) return;
+
+      const recipientAddr = recipient.trim();
+      const amountSui = parseFloat(amount);
+      const amountMist = BigInt(Math.floor(amountSui * 1e9));
+
+      await sendPayment(recipientAddr, amountMist);
+
+      // Success: close modal and reset
+      setIsTransferModalOpen(false);
+      setRecipient('');
+      setAmount('');
+      alert('전송 완료!');
+    } catch (error: any) {
+      console.error('Send failed:', error);
+      alert(error?.message || '전송 실패');
+    }
   };
 
   // Falcon key generation
@@ -553,8 +554,10 @@ export const WalletUI: React.FC<WalletUIProps> = ({
         amount={amount}
         onRecipientChange={setRecipient}
         onAmountChange={setAmount}
-        onConfirm={executeTransfer}
+        onConfirm={handleSubmitSend}
         onCancel={() => setIsTransferModalOpen(false)}
+        canSend={canSend}
+        isLoading={isLoading}
       />
     </>
   );
