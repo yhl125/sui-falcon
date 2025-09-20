@@ -14,6 +14,7 @@ import { MainContent } from './wallet/MainContent';
 import { useFalcon, type FalconKeys } from '../hooks/useFalcon';
 import { useHybridWallet } from '../hooks/useHybridWalletContext';
 import { HybridWallet } from '../lib/HybridWallet';
+import { useHybridWallet } from '../hooks/useHybridWalletContext';
 
 interface WalletUIProps {
   // Optional props for additional customization
@@ -23,6 +24,16 @@ interface WalletUIProps {
 export const WalletUI: React.FC<WalletUIProps> = ({
   onDeposit
 }) => {
+  // Access HybridWallet context for complete wallet data
+  const {
+    hybridWallet,
+    hybridWalletId,
+    hasHybridWallet,
+    isLoading: isHybridWalletLoading,
+    createHybridWallet,
+    error: hybridWalletError,
+    loadHybridWalletForAccount
+  } = useHybridWallet();
   const currentAccount = useCurrentAccount();
 
   // HybridWallet context
@@ -73,6 +84,28 @@ export const WalletUI: React.FC<WalletUIProps> = ({
       }
     }
   }, []);
+
+  // Debug: Monitor hybrid wallet data changes
+  useEffect(() => {
+    if (hybridWallet && hybridWalletId) {
+      console.log('=== HYBRID WALLET DATA LOADED ===');
+      console.log('Hybrid Wallet ID:', hybridWalletId);
+      console.log('Hybrid Wallet Object:', hybridWallet);
+      console.log('Treasury Balance (BigInt):', hybridWallet.treasury);
+      console.log('Treasury Balance (SUI):', Number(hybridWallet.treasury) / Number(MIST_PER_SUI));
+      console.log('Transaction Nonce:', hybridWallet.nonce);
+      console.log('Ed25519 Public Key:', hybridWallet.ed25519_pubkey);
+      console.log('Falcon Public Key Length:', hybridWallet.falcon_pubkey?.length || 0);
+      console.log('Connected Traditional Key:', hybridWallet.traditionalKey);
+      console.log('Local Falcon Key Available:', !!hybridWallet.falconKey);
+      console.log('================================');
+    } else if (hasHybridWallet === false) {
+      console.log('=== NO HYBRID WALLET FOUND ===');
+      console.log('Has Hybrid Wallet:', hasHybridWallet);
+      console.log('Hybrid Wallet ID:', hybridWalletId);
+      console.log('===============================');
+    }
+  }, [hybridWallet, hybridWalletId, hasHybridWallet]);
 
   // Handle transfer transaction
   const handleSend = () => {
@@ -542,8 +575,13 @@ export const WalletUI: React.FC<WalletUIProps> = ({
           onDeposit={handleDeposit}
           // Falcon functionality
           falconKeys={falconKeys}
-          isFalconReady={isFalconReady}
-          falconError={falconError}
+          // Hybrid Wallet functionality
+          hybridWallet={hybridWallet}
+          hybridWalletId={hybridWalletId}
+          hybridWalletBalance={hybridWallet?.treasury}
+          hasHybridWallet={hasHybridWallet}
+          isHybridWalletLoading={isHybridWalletLoading}
+          hybridWalletError={hybridWalletError}
         />
       </div>
 
