@@ -72,7 +72,7 @@ const INVALID_NONCE: u64 = 3;
 // ==============================
 
 // 초기화
-fun init(ctx: &mut TxContext) {
+public entry fun initRegistry(ctx: &mut TxContext) {
     let registry = WalletRegistry {
         id: object::new(ctx),
         wallets: table::new(ctx),
