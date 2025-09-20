@@ -154,7 +154,7 @@ export const WalletUI: React.FC<WalletUIProps> = ({
       const wallet = new HybridWallet();
       wallet.init(); // Re-initialize to pick up the new keys
       wallet.setFalconKeys(newKeys.privateKey, newKeys.publicKey);
-      console.log('✅ HybridWallet updated with Falcon keys');
+      console.log(' HybridWallet updated with Falcon keys');
       
       // Step 4: Create Move contract wallet using Falcon keys
       console.log('🏗️ Creating Move contract wallet with Falcon keys...');

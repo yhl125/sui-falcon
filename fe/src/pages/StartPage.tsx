@@ -33,13 +33,13 @@ export const StartPage: React.FC<StartPageProps> = ({ onStart }) => {
       }
     },
     onComplete: () => {
-      console.log('✅ Falcon initialization completed!');
+      console.log('Falcon initialization completed!');
       setIsWalletReady(true);
       // Show connect wallet button after a brief delay
       setTimeout(() => setShowConnectButton(true), 500);
     },
     onError: (error) => {
-      console.error('❌ Falcon initialization failed:', error);
+      console.error('Falcon initialization failed:', error);
       // Still show connect button to allow manual proceed (fallback)
       setTimeout(() => setShowConnectButton(true), 1000);
     }
@@ -85,7 +85,7 @@ export const StartPage: React.FC<StartPageProps> = ({ onStart }) => {
         <div style={{ animation: 'logoShimmer 3s ease-in-out infinite' }}>
           <h1
             style={{
-              fontSize: 'clamp(2.5rem, 8vw, 6rem)',
+              fontSize: 'clamp(3rem, 10vw, 8rem)',
               fontFamily: 'Nostalgia, monospace',
               fontWeight: 'bold',
               color: '#E0FFFF',
@@ -99,7 +99,7 @@ export const StartPage: React.FC<StartPageProps> = ({ onStart }) => {
               imageRendering: 'pixelated'
             }}
           >
-            SuiQ
+             SuiQ
           </h1>
           <p
             style={{
@@ -110,7 +110,7 @@ export const StartPage: React.FC<StartPageProps> = ({ onStart }) => {
               letterSpacing: '0.05em'
             }}
           >
-            Dive into the Sui Ecosystem
+            Beyond the Quantum Horizon
           </p>
         </div>
 
@@ -286,24 +286,67 @@ export const StartPage: React.FC<StartPageProps> = ({ onStart }) => {
                 `
               }} />
               
-              <ConnectButton style={{
-                position: 'relative',
-                background: 'transparent',
-                border: 'none',
-                color: '#E0FFFF',
-                padding: '0.75rem 1.5rem',
-                fontSize: '0.95rem',
-                fontFamily: 'monospace',
-                fontWeight: '600',
-                cursor: 'pointer',
-                borderRadius: '12px',
-                letterSpacing: '0.05em',
-                transition: 'all 0.3s ease',
-                textShadow: `0 0 10px ${isWalletReady 
-                  ? 'rgba(64, 224, 208, 0.8)' 
-                  : 'rgba(255, 165, 0, 0.8)'}`,
-                zIndex: 1
-              }} />
+              <ConnectButton
+                style={{
+                  position: 'relative',
+                  background: 'transparent',
+                  border: 'none',
+                  color: '#E0FFFF',
+                  padding: '0.75rem 1.5rem',
+                  fontSize: '0.95rem',
+                  fontFamily: 'monospace',
+                  fontWeight: '600',
+                  cursor: 'pointer',
+                  borderRadius: '12px',
+                  letterSpacing: '0.05em',
+                  transition: 'all 0.3s ease',
+                  textShadow: `0 0 10px ${isWalletReady
+                    ? 'rgba(64, 224, 208, 0.8)'
+                    : 'rgba(255, 165, 0, 0.8)'}`,
+                  zIndex: 1
+                }}
+                onMouseEnter={(e) => {
+                  // Enhanced glow effect on hover
+                  e.currentTarget.style.textShadow = `
+                    0 0 20px ${isWalletReady ? 'rgba(64, 224, 208, 1)' : 'rgba(255, 165, 0, 1)'},
+                    0 0 40px ${isWalletReady ? 'rgba(64, 224, 208, 0.8)' : 'rgba(255, 165, 0, 0.8)'},
+                    0 0 60px ${isWalletReady ? 'rgba(64, 224, 208, 0.6)' : 'rgba(255, 165, 0, 0.6)'}
+                  `;
+                  e.currentTarget.style.transform = 'translateY(-2px) scale(1.05)';
+
+                  // Add glow to the background
+                  const backgroundDiv = e.currentTarget.parentElement?.querySelector('div');
+                  if (backgroundDiv) {
+                    backgroundDiv.style.boxShadow = `
+                      0 12px 48px ${isWalletReady
+                        ? 'rgba(64, 224, 208, 0.4)'
+                        : 'rgba(255, 165, 0, 0.4)'},
+                      inset 0 1px 0 rgba(255, 255, 255, 0.2),
+                      0 0 20px ${isWalletReady
+                        ? 'rgba(64, 224, 208, 0.3)'
+                        : 'rgba(255, 165, 0, 0.3)'}
+                    `;
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  // Return to normal state
+                  e.currentTarget.style.textShadow = `0 0 10px ${isWalletReady
+                    ? 'rgba(64, 224, 208, 0.8)'
+                    : 'rgba(255, 165, 0, 0.8)'}`;
+                  e.currentTarget.style.transform = 'translateY(0px) scale(1)';
+
+                  // Reset background glow
+                  const backgroundDiv = e.currentTarget.parentElement?.querySelector('div');
+                  if (backgroundDiv) {
+                    backgroundDiv.style.boxShadow = `
+                      0 8px 32px ${isWalletReady
+                        ? 'rgba(64, 224, 208, 0.2)'
+                        : 'rgba(255, 165, 0, 0.2)'},
+                      inset 0 1px 0 rgba(255, 255, 255, 0.1)
+                    `;
+                  }
+                }}
+              />
             </div>
           </div>
         )}
@@ -338,7 +381,7 @@ export const StartPage: React.FC<StartPageProps> = ({ onStart }) => {
               textShadow: '0 0 8px rgba(16, 185, 129, 0.6)',
               fontWeight: '500'
             }}>
-              🎉 Connected<br />
+              Connected<br />
               <span style={{ fontSize: '0.75rem', opacity: 0.8 }}>
                 Launching SuiQ...
               </span>

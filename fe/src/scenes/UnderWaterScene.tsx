@@ -104,7 +104,7 @@ export const UnderWaterScene: React.FC<UnderWaterSceneProps> = ({ children, anim
         const normalizedDelta = Math.min(deltaTime, 16.67); // Cap at 60fps equivalent
         const speedMultiplier = normalizedDelta / 16.67; // Normalize to 60fps baseline
         
-        bubble.y -= bubble.speed * normalizedDelta * 0.1; // Slower movement
+        bubble.y -= bubble.speed * normalizedDelta * 0.4; // Slower movement
         bubble.wobble += 0.02 * normalizedDelta * 0.1;
         bubble.x += Math.sin(bubble.wobble) * 0.3 * speedMultiplier;
 
