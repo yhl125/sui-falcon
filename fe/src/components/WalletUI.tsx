@@ -504,14 +504,12 @@ export const WalletUI: React.FC<WalletUIProps> = ({
           minHeight: '600px',
           borderRadius: '24px',
           overflow: 'hidden',
-          boxShadow: '0 32px 80px rgba(0, 0, 0, 0.3)',
+          // boxShadow: '0 32px 80px rgba(0, 0, 0, 0.3)',
           display: 'flex',
           fontFamily: '"Inter", "Segoe UI", sans-serif',
         }}
       >
-        {/* Sidebar */}
-        <Sidebar currentAccount={currentAccount} />
-        
+
         {/* Main Content */}
         <MainContent 
           balance={suiBalance} 
@@ -520,8 +518,6 @@ export const WalletUI: React.FC<WalletUIProps> = ({
           // Falcon functionality
           falconKeys={falconKeys}
           isFalconReady={isFalconReady}
-          isGeneratingKeys={isGeneratingKeys}
-          onGenerateFalconKeys={handleGenerateFalconKeys}
           falconError={falconError}
         />
       </div>
