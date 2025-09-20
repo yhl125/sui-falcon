@@ -153,10 +153,18 @@ export const HybridWalletProvider: React.FC<HybridWalletProviderProps> = ({
               onChainWalletId,
               walletObject.data.content
             );
-            mergedWallet.init();
+            
+            // 로컬 정보와 병합
+            await mergedWallet.init();
+            mergedWallet.traditionalKey = accountAddress; // 현재 계정 주소 설정
+            
+            console.log('=== MERGED WALLET INFO ===');
+            console.log('Wallet after merge:', mergedWallet);
+            console.log('Traditional key:', mergedWallet.traditionalKey);
+            console.log('Local falcon key available:', !!mergedWallet.falconKey);
+            console.log('==========================');
 
             // 상태 업데이트
-            console.log(mergedWallet);
             setHybridWallet(mergedWallet);
             setHybridWalletId(onChainWalletId);
             setHasHybridWallet(true);

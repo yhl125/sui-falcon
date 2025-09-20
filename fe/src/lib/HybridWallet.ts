@@ -75,14 +75,70 @@ export class HybridWallet {
 
   // 온체인 데이터로부터 HybridWallet 인스턴스 생성
   static fromOnChainData(objectId: string, content: any): HybridWallet {
+    console.log('=== PARSING ON-CHAIN DATA ===');
+    console.log('Object ID:', objectId);
+    console.log('Raw content:', content);
+    
     const wallet = new HybridWallet();
     wallet.id = objectId;
-    wallet.ed25519_pubkey = content.ed25519_pubkey
-      ? new Uint8Array(content.ed25519_pubkey)
-      : null;
-    wallet.falcon_pubkey = content.falcon_pubkey || null;
-    wallet.treasury = BigInt(content.treasury || 0);
-    wallet.nonce = BigInt(content.nonce || 0);
+
+    // Sui Move 데이터 구조에 맞게 파싱
+    if (content.dataType === 'moveObject' && content.fields) {
+      const fields = content.fields;
+      console.log('Move object fields:', fields);
+      
+      // Ed25519 공개키 파싱
+      if (fields.ed25519_pubkey) {
+        console.log('Ed25519 pubkey raw:', fields.ed25519_pubkey);
+        if (Array.isArray(fields.ed25519_pubkey)) {
+          wallet.ed25519_pubkey = new Uint8Array(fields.ed25519_pubkey);
+        } else if (typeof fields.ed25519_pubkey === 'string') {
+          // hex string인 경우
+          const hex = fields.ed25519_pubkey.replace('0x', '');
+          wallet.ed25519_pubkey = new Uint8Array(hex.match(/.{1,2}/g)?.map(byte => parseInt(byte, 16)) || []);
+        }
+        console.log('Parsed Ed25519 pubkey:', wallet.ed25519_pubkey);
+      }
+      
+      // Falcon 공개키 파싱
+      if (fields.falcon_pubkey) {
+        console.log('Falcon pubkey raw:', fields.falcon_pubkey);
+        if (Array.isArray(fields.falcon_pubkey)) {
+          wallet.falcon_pubkey = fields.falcon_pubkey.map((val: any) => BigInt(val));
+        }
+        console.log('Parsed Falcon pubkey length:', wallet.falcon_pubkey?.length);
+      }
+      
+      // Treasury 잔액 파싱
+      if (fields.treasury && fields.treasury.fields && fields.treasury.fields.value) {
+        wallet.treasury = BigInt(fields.treasury.fields.value);
+        console.log('Parsed treasury:', wallet.treasury);
+      }
+      
+      // Nonce 파싱
+      if (fields.nonce !== undefined) {
+        wallet.nonce = BigInt(fields.nonce);
+        console.log('Parsed nonce:', wallet.nonce);
+      }
+    } else {
+      // 이전 형식 지원 (fallback)
+      console.log('Using fallback parsing...');
+      wallet.ed25519_pubkey = content.ed25519_pubkey
+        ? new Uint8Array(content.ed25519_pubkey)
+        : null;
+      wallet.falcon_pubkey = content.falcon_pubkey || null;
+      wallet.treasury = BigInt(content.treasury || 0);
+      wallet.nonce = BigInt(content.nonce || 0);
+    }
+    
+    console.log('=== FINAL PARSED WALLET ===');
+    console.log('ID:', wallet.id);
+    console.log('Ed25519 pubkey:', wallet.ed25519_pubkey);
+    console.log('Falcon pubkey length:', wallet.falcon_pubkey?.length || 0);
+    console.log('Treasury:', wallet.treasury);
+    console.log('Nonce:', wallet.nonce);
+    console.log('=============================');
+    
     return wallet;
   }
 
