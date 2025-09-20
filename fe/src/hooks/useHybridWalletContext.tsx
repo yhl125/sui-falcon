@@ -225,6 +225,7 @@ export const HybridWalletProvider: React.FC<HybridWalletProviderProps> = ({
       const ed25519PubBytes = hexToBytes(hex);
 
       const falconPubStr = hybridWallet.falconKey?.publicKey || "";
+      console.log("지금 팔콘 펍키!!!!!!!"+falconPubStr)
       const falconPub = [BigInt(falconPubStr.length)];
       if (!falconPub) {
         throw new Error("Falcon public key not available");
