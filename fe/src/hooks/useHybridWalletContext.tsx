@@ -13,6 +13,7 @@ import {
 } from "@mysten/dapp-kit";
 import { Transaction } from "@mysten/sui/transactions";
 import { HybridWallet } from "../lib/HybridWallet";
+import { useFalcon } from "./useFalcon";
 
 interface HybridWalletState {
   hybridWallet: HybridWallet | null;
@@ -49,6 +50,7 @@ export const HybridWalletProvider: React.FC<HybridWalletProviderProps> = ({
   const suiClient = useSuiClient();
   const { mutate: signAndExecuteTransaction } = useSignAndExecuteTransaction();
   const { mutate: signPersonalMessage } = useSignPersonalMessage();
+  const { compressPublicKey } = useFalcon();
 
   // 상태 관리
   const [hybridWallet, setHybridWallet] = useState<HybridWallet | null>(null);
@@ -225,13 +227,12 @@ export const HybridWalletProvider: React.FC<HybridWalletProviderProps> = ({
       const ed25519PubBytes = hexToBytes(hex);
 
       const falconPubStr = hybridWallet.falconKey?.publicKey || "";
-      console.log("지금 팔콘 펍키!!!!!!!"+falconPubStr)
-      const falconPub = [BigInt(falconPubStr.length)];
-      if (!falconPub) {
-        throw new Error("Falcon public key not available");
-      }
+      const falconKeyObj = JSON.parse(falconPubStr);
+      const falconPub = falconKeyObj.pk.map((n: number) => BigInt(n));
+      const { pkCompact } = await compressPublicKey(falconPubStr);
 
-      console.log("퍼블릭 키 준비 완료", ed25519PubStr, falconPubStr);
+      console.log("퍼블릭 키 준비 완료", ed25519PubBytes, falconPub);
+      // console.log("압축된 falcon key", pkCompact);
 
       // 2. 트랜잭션 생성
       const tx = new Transaction();
@@ -240,7 +241,7 @@ export const HybridWalletProvider: React.FC<HybridWalletProviderProps> = ({
         arguments: [
           tx.object(REGISTRY_OBJECT_ID),
           tx.pure("vector<u8>", ed25519PubBytes),
-          tx.pure("vector<u256>", falconPub),
+          tx.pure("vector<u256>", pkCompact),
         ],
       });
       signAndExecuteTransaction(

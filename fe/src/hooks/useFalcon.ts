@@ -1,5 +1,5 @@
-import { useState, useCallback, useRef, useEffect } from 'react';
-import { loadPyodide, type PyodideInterface } from 'pyodide';
+import { useState, useCallback, useRef, useEffect } from "react";
+import { loadPyodide, type PyodideInterface } from "pyodide";
 
 export interface FalconKeys {
   privateKey: string;
@@ -33,22 +33,27 @@ export const useFalcon = (options?: FalconInitOptions) => {
   const [isInitialized, setIsInitialized] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [initializationProgress, setInitializationProgress] = useState(0);
-  const [currentStep, setCurrentStep] = useState<string>('');
+  const [currentStep, setCurrentStep] = useState<string>("");
   const pyodideRef = useRef<PyodideInterface | null>(null);
-  const initializationPromiseRef = useRef<Promise<PyodideInterface> | null>(null);
+  const initializationPromiseRef = useRef<Promise<PyodideInterface> | null>(
+    null
+  );
 
-  const reportProgress = useCallback((step: string, progress: number) => {
-    setCurrentStep(step);
-    // Only update progress for major milestones to reduce re-renders
-    const majorMilestones = [0, 25, 50, 75, 100];
-    const nearestMilestone = majorMilestones.find(milestone => 
-      Math.abs(progress - milestone) <= 5
-    );
-    if (nearestMilestone !== undefined) {
-      setInitializationProgress(nearestMilestone);
-    }
-    options?.onProgress?.(step, progress);
-  }, [options]);
+  const reportProgress = useCallback(
+    (step: string, progress: number) => {
+      setCurrentStep(step);
+      // Only update progress for major milestones to reduce re-renders
+      const majorMilestones = [0, 25, 50, 75, 100];
+      const nearestMilestone = majorMilestones.find(
+        (milestone) => Math.abs(progress - milestone) <= 5
+      );
+      if (nearestMilestone !== undefined) {
+        setInitializationProgress(nearestMilestone);
+      }
+      options?.onProgress?.(step, progress);
+    },
+    [options]
+  );
 
   const initializePyodide = useCallback(async () => {
     if (pyodideRef.current) return pyodideRef.current;
@@ -61,106 +66,116 @@ export const useFalcon = (options?: FalconInitOptions) => {
     const initPromise = (async () => {
       setIsLoading(true);
       setError(null);
-      reportProgress('Starting Falcon initialization...', 0);
+      reportProgress("Starting Falcon initialization...", 0);
 
       try {
-        reportProgress('Loading Pyodide runtime...', 10);
-        console.log('Loading Pyodide...');
-        
+        reportProgress("Loading Pyodide runtime...", 10);
+        console.log("Loading Pyodide...");
+
         // Use setTimeout to yield control to the main thread periodically
-        await new Promise(resolve => setTimeout(resolve, 10));
-        
+        await new Promise((resolve) => setTimeout(resolve, 10));
+
         const pyodide = await loadPyodide({
-          indexURL: "https://cdn.jsdelivr.net/pyodide/v0.28.2/full/"
+          indexURL: "https://cdn.jsdelivr.net/pyodide/v0.28.2/full/",
         });
 
-        reportProgress('Installing Python packages...', 25);
-        console.log('Installing packages...');
-        
-        // Yield control to main thread before heavy operations
-        await new Promise(resolve => setTimeout(resolve, 10));
-        await pyodide.loadPackage(['numpy', 'pycryptodome']);
+        reportProgress("Installing Python packages...", 25);
+        console.log("Installing packages...");
 
-        reportProgress('Loading Falcon Python modules...', 50);
-        console.log('Loading Python files...');
-        
+        // Yield control to main thread before heavy operations
+        await new Promise((resolve) => setTimeout(resolve, 10));
+        await pyodide.loadPackage(["numpy", "pycryptodome"]);
+
+        reportProgress("Loading Falcon Python modules...", 50);
+        console.log("Loading Python files...");
+
         // Yield control to main thread before file loading
-        await new Promise(resolve => setTimeout(resolve, 10));
+        await new Promise((resolve) => setTimeout(resolve, 10));
         // Python 파일들을 로드
         const pythonFiles = await Promise.all([
-        fetch('/python-ref/common.py').then(r => r.text()),
-        fetch('/python-ref/falcon.py').then(r => r.text()),
-        fetch('/python-ref/encoding.py').then(r => r.text()),
-        fetch('/python-ref/shake.py').then(r => r.text()),
-        fetch('/python-ref/keccak_prng.py').then(r => r.text()),
-        fetch('/python-ref/keccak.py').then(r => r.text()),
-        fetch('/python-ref/sign_cli.py').then(r => r.text()),
-        fetch('/python-ref/fft.py').then(r => r.text()),
-        fetch('/python-ref/ffsampling.py').then(r => r.text()),
-        fetch('/python-ref/ntrugen.py').then(r => r.text()),
-        fetch('/python-ref/rng.py').then(r => r.text()),
-        fetch('/python-ref/samplerz.py').then(r => r.text()),
-        fetch('/python-ref/blake2s_prng.py').then(r => r.text()),
-        fetch('/python-ref/fft_constants.py').then(r => r.text()),
-        // polyntt 모듈들
-        fetch('/python-ref/polyntt/poly.py').then(r => r.text()),
-        fetch('/python-ref/polyntt/ntt_iterative.py').then(r => r.text()),
-        fetch('/python-ref/polyntt/ntt_constants_iterative.py').then(r => r.text()),
-        fetch('/python-ref/polyntt/ntt.py').then(r => r.text()),
-        fetch('/python-ref/polyntt/ntt_recursive.py').then(r => r.text()),
-        fetch('/python-ref/polyntt/ntt_constants_recursive.py').then(r => r.text()),
-        fetch('/python-ref/polyntt/utils.py').then(r => r.text()),
-        fetch('/python-ref/polyntt/m31_2.py').then(r => r.text()),
-        fetch('/python-ref/polyntt/m31.py').then(r => r.text()),
-        fetch('/python-ref/polyntt/params.py').then(r => r.text()),
-      ]);
+          fetch("/python-ref/common.py").then((r) => r.text()),
+          fetch("/python-ref/falcon.py").then((r) => r.text()),
+          fetch("/python-ref/encoding.py").then((r) => r.text()),
+          fetch("/python-ref/shake.py").then((r) => r.text()),
+          fetch("/python-ref/keccak_prng.py").then((r) => r.text()),
+          fetch("/python-ref/keccak.py").then((r) => r.text()),
+          fetch("/python-ref/sign_cli.py").then((r) => r.text()),
+          fetch("/python-ref/fft.py").then((r) => r.text()),
+          fetch("/python-ref/ffsampling.py").then((r) => r.text()),
+          fetch("/python-ref/ntrugen.py").then((r) => r.text()),
+          fetch("/python-ref/rng.py").then((r) => r.text()),
+          fetch("/python-ref/samplerz.py").then((r) => r.text()),
+          fetch("/python-ref/blake2s_prng.py").then((r) => r.text()),
+          fetch("/python-ref/fft_constants.py").then((r) => r.text()),
+          // polyntt 모듈들
+          fetch("/python-ref/polyntt/poly.py").then((r) => r.text()),
+          fetch("/python-ref/polyntt/ntt_iterative.py").then((r) => r.text()),
+          fetch("/python-ref/polyntt/ntt_constants_iterative.py").then((r) =>
+            r.text()
+          ),
+          fetch("/python-ref/polyntt/ntt.py").then((r) => r.text()),
+          fetch("/python-ref/polyntt/ntt_recursive.py").then((r) => r.text()),
+          fetch("/python-ref/polyntt/ntt_constants_recursive.py").then((r) =>
+            r.text()
+          ),
+          fetch("/python-ref/polyntt/utils.py").then((r) => r.text()),
+          fetch("/python-ref/polyntt/m31_2.py").then((r) => r.text()),
+          fetch("/python-ref/polyntt/m31.py").then((r) => r.text()),
+          fetch("/python-ref/polyntt/params.py").then((r) => r.text()),
+        ]);
 
-        reportProgress('Setting up Falcon environment...', 75);
-        
+        reportProgress("Setting up Falcon environment...", 75);
+
         // Yield control to main thread before file system operations
-        await new Promise(resolve => setTimeout(resolve, 10));
-        
+        await new Promise((resolve) => setTimeout(resolve, 10));
+
         // 디렉토리 생성
         try {
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          (pyodide.FS as any).mkdir('/polyntt');
+          (pyodide.FS as any).mkdir("/polyntt");
         } catch (e) {
-          console.log('Directory already exists or creation failed:', e);
+          console.log("Directory already exists or creation failed:", e);
         }
 
-      // Python 파일들을 Pyodide 파일시스템에 저장
-      pyodide.FS.writeFile('/common.py', pythonFiles[0]);
-      pyodide.FS.writeFile('/falcon.py', pythonFiles[1]);
-      pyodide.FS.writeFile('/encoding.py', pythonFiles[2]);
-      pyodide.FS.writeFile('/shake.py', pythonFiles[3]);
-      pyodide.FS.writeFile('/keccak_prng.py', pythonFiles[4]);
-      pyodide.FS.writeFile('/keccak.py', pythonFiles[5]);
-      pyodide.FS.writeFile('/sign_cli.py', pythonFiles[6]);
-      pyodide.FS.writeFile('/fft.py', pythonFiles[7]);
-      pyodide.FS.writeFile('/ffsampling.py', pythonFiles[8]);
-      pyodide.FS.writeFile('/ntrugen.py', pythonFiles[9]);
-      pyodide.FS.writeFile('/rng.py', pythonFiles[10]);
-      pyodide.FS.writeFile('/samplerz.py', pythonFiles[11]);
-      pyodide.FS.writeFile('/blake2s_prng.py', pythonFiles[12]);
-      pyodide.FS.writeFile('/fft_constants.py', pythonFiles[13]);
-      pyodide.FS.writeFile('/polyntt/poly.py', pythonFiles[14]);
-      pyodide.FS.writeFile('/polyntt/ntt_iterative.py', pythonFiles[15]);
-      pyodide.FS.writeFile('/polyntt/ntt_constants_iterative.py', pythonFiles[16]);
-      pyodide.FS.writeFile('/polyntt/ntt.py', pythonFiles[17]);
-      pyodide.FS.writeFile('/polyntt/ntt_recursive.py', pythonFiles[18]);
-      pyodide.FS.writeFile('/polyntt/ntt_constants_recursive.py', pythonFiles[19]);
-      pyodide.FS.writeFile('/polyntt/utils.py', pythonFiles[20]);
-      pyodide.FS.writeFile('/polyntt/m31_2.py', pythonFiles[21]);
-      pyodide.FS.writeFile('/polyntt/m31.py', pythonFiles[22]);
-      pyodide.FS.writeFile('/polyntt/params.py', pythonFiles[23]);
-      pyodide.FS.writeFile('/polyntt/__init__.py', '# polyntt package');
+        // Python 파일들을 Pyodide 파일시스템에 저장
+        pyodide.FS.writeFile("/common.py", pythonFiles[0]);
+        pyodide.FS.writeFile("/falcon.py", pythonFiles[1]);
+        pyodide.FS.writeFile("/encoding.py", pythonFiles[2]);
+        pyodide.FS.writeFile("/shake.py", pythonFiles[3]);
+        pyodide.FS.writeFile("/keccak_prng.py", pythonFiles[4]);
+        pyodide.FS.writeFile("/keccak.py", pythonFiles[5]);
+        pyodide.FS.writeFile("/sign_cli.py", pythonFiles[6]);
+        pyodide.FS.writeFile("/fft.py", pythonFiles[7]);
+        pyodide.FS.writeFile("/ffsampling.py", pythonFiles[8]);
+        pyodide.FS.writeFile("/ntrugen.py", pythonFiles[9]);
+        pyodide.FS.writeFile("/rng.py", pythonFiles[10]);
+        pyodide.FS.writeFile("/samplerz.py", pythonFiles[11]);
+        pyodide.FS.writeFile("/blake2s_prng.py", pythonFiles[12]);
+        pyodide.FS.writeFile("/fft_constants.py", pythonFiles[13]);
+        pyodide.FS.writeFile("/polyntt/poly.py", pythonFiles[14]);
+        pyodide.FS.writeFile("/polyntt/ntt_iterative.py", pythonFiles[15]);
+        pyodide.FS.writeFile(
+          "/polyntt/ntt_constants_iterative.py",
+          pythonFiles[16]
+        );
+        pyodide.FS.writeFile("/polyntt/ntt.py", pythonFiles[17]);
+        pyodide.FS.writeFile("/polyntt/ntt_recursive.py", pythonFiles[18]);
+        pyodide.FS.writeFile(
+          "/polyntt/ntt_constants_recursive.py",
+          pythonFiles[19]
+        );
+        pyodide.FS.writeFile("/polyntt/utils.py", pythonFiles[20]);
+        pyodide.FS.writeFile("/polyntt/m31_2.py", pythonFiles[21]);
+        pyodide.FS.writeFile("/polyntt/m31.py", pythonFiles[22]);
+        pyodide.FS.writeFile("/polyntt/params.py", pythonFiles[23]);
+        pyodide.FS.writeFile("/polyntt/__init__.py", "# polyntt package");
 
-        reportProgress('Initializing Falcon crypto system...', 90);
-        console.log('Initializing Falcon...');
-        
+        reportProgress("Initializing Falcon crypto system...", 90);
+        console.log("Initializing Falcon...");
+
         // Yield control to main thread before Python execution
-        await new Promise(resolve => setTimeout(resolve, 10));
-        
+        await new Promise((resolve) => setTimeout(resolve, 10));
+
         // Python 환경 설정
         await pyodide.runPython(`
         import sys
@@ -287,29 +302,51 @@ export const useFalcon = (options?: FalconInitOptions) => {
             except Exception as e:
                 return str(e)
 
+        def compress_publickey_for_move(pk_data):
+            """Move 호환 포맷으로 압축"""
+            try:
+                from polyntt.poly import Poly
+
+                # PublicKey 객체 재구성
+                pk = PublicKey(pk_data['n'], pk_data['pk'])
+
+                # 공개키 압축 (NTT 변환 후 압축)
+                pk_ntt = Poly(pk.pk, q).ntt()
+                pk_compact = falcon_compact(pk_ntt)
+
+                # BigInt 정밀도 보존을 위해 큰 정수들을 문자열로 변환
+                return {
+                    'pk_compact': [str(val) for val in pk_compact],
+                    'pk_raw': list(pk.pk),     # 공개키 원본 512개 계수
+                    'pk_ntt_raw': list(pk_ntt) # NTT 변환된 공개키
+                }
+            except Exception as e:
+                return str(e)
+
         print("Falcon initialized successfully!")
       `);
 
-        reportProgress('Falcon ready!', 100);
+        reportProgress("Falcon ready!", 100);
         pyodideRef.current = pyodide;
         setIsInitialized(true);
-        console.log('Pyodide initialized successfully!');
-        
+        console.log("Pyodide initialized successfully!");
+
         // Clear the initialization promise
         initializationPromiseRef.current = null;
-        
+
         // Notify completion
         options?.onComplete?.();
 
         return pyodide;
       } catch (err) {
-        const errorMsg = err instanceof Error ? err.message : 'Failed to initialize Pyodide';
+        const errorMsg =
+          err instanceof Error ? err.message : "Failed to initialize Pyodide";
         setError(errorMsg);
-        console.error('Pyodide initialization error:', err);
-        
+        console.error("Pyodide initialization error:", err);
+
         // Clear the initialization promise on error
         initializationPromiseRef.current = null;
-        
+
         // Notify error
         options?.onError?.(errorMsg);
         throw err;
@@ -345,10 +382,11 @@ export const useFalcon = (options?: FalconInitOptions) => {
       const keys = JSON.parse(result);
       return {
         privateKey: JSON.stringify(keys.private_key),
-        publicKey: JSON.stringify(keys.public_key)
+        publicKey: JSON.stringify(keys.public_key),
       };
     } catch (err) {
-      const errorMsg = err instanceof Error ? err.message : 'Failed to generate keys';
+      const errorMsg =
+        err instanceof Error ? err.message : "Failed to generate keys";
       setError(errorMsg);
       throw err;
     } finally {
@@ -356,98 +394,107 @@ export const useFalcon = (options?: FalconInitOptions) => {
     }
   }, [initializePyodide]);
 
-  const signData = useCallback(async (privateKey: string, data: string): Promise<string> => {
-    const pyodide = await initializePyodide();
+  const signData = useCallback(
+    async (privateKey: string, data: string): Promise<string> => {
+      const pyodide = await initializePyodide();
 
-    setIsLoading(true);
-    setError(null);
+      setIsLoading(true);
+      setError(null);
 
-    try {
-      // privateKey는 JSON 문자열이므로 파싱
-      const skData = JSON.parse(privateKey);
+      try {
+        // privateKey는 JSON 문자열이므로 파싱
+        const skData = JSON.parse(privateKey);
 
-      pyodide.globals.set('sk_data_json', JSON.stringify(skData));
-      pyodide.globals.set('data_hex', data);
+        pyodide.globals.set("sk_data_json", JSON.stringify(skData));
+        pyodide.globals.set("data_hex", data);
 
-      const signature = pyodide.runPython(`
+        const signature = pyodide.runPython(`
         import json
         sk_data = json.loads(sk_data_json)
         result = sign_data(sk_data, data_hex)
         str(result)
       `);
 
-      if (typeof signature !== 'string') {
-        throw new Error(`Invalid signature type: ${typeof signature}`);
+        if (typeof signature !== "string") {
+          throw new Error(`Invalid signature type: ${typeof signature}`);
+        }
+
+        if (signature.startsWith("Error:")) {
+          throw new Error(signature);
+        }
+
+        if (signature.length < 10) {
+          throw new Error("Signature too short");
+        }
+
+        return signature;
+      } catch (err) {
+        const errorMsg =
+          err instanceof Error ? err.message : "Failed to sign data";
+        setError(errorMsg);
+        throw err;
+      } finally {
+        setIsLoading(false);
       }
+    },
+    [initializePyodide]
+  );
 
-      if (signature.startsWith('Error:')) {
-        throw new Error(signature);
-      }
+  const verifySignature = useCallback(
+    async (
+      publicKey: string,
+      data: string,
+      signature: string
+    ): Promise<boolean> => {
+      const pyodide = await initializePyodide();
 
-      if (signature.length < 10) {
-        throw new Error('Signature too short');
-      }
+      setIsLoading(true);
+      setError(null);
 
-      return signature;
-    } catch (err) {
-      const errorMsg = err instanceof Error ? err.message : 'Failed to sign data';
-      setError(errorMsg);
-      throw err;
-    } finally {
-      setIsLoading(false);
-    }
-  }, [initializePyodide]);
+      try {
+        const pkData = JSON.parse(publicKey);
 
-  const verifySignature = useCallback(async (
-    publicKey: string,
-    data: string,
-    signature: string
-  ): Promise<boolean> => {
-    const pyodide = await initializePyodide();
+        pyodide.globals.set("pk_data_json", JSON.stringify(pkData));
+        pyodide.globals.set("data_hex", data);
+        pyodide.globals.set("sig_hex", signature);
 
-    setIsLoading(true);
-    setError(null);
-
-    try {
-      const pkData = JSON.parse(publicKey);
-
-      pyodide.globals.set('pk_data_json', JSON.stringify(pkData));
-      pyodide.globals.set('data_hex', data);
-      pyodide.globals.set('sig_hex', signature);
-
-      const result = pyodide.runPython(`
+        const result = pyodide.runPython(`
         import json
         pk_data = json.loads(pk_data_json)
         result = verify_signature(pk_data, data_hex, sig_hex)
         bool(result)
       `);
 
-      return result === true;
-    } catch (err) {
-      const errorMsg = err instanceof Error ? err.message : 'Failed to verify signature';
-      setError(errorMsg);
-      throw err;
-    } finally {
-      setIsLoading(false);
-    }
-  }, [initializePyodide]);
+        return result === true;
+      } catch (err) {
+        const errorMsg =
+          err instanceof Error ? err.message : "Failed to verify signature";
+        setError(errorMsg);
+        throw err;
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [initializePyodide]
+  );
 
-  const compressForMove = useCallback(async (
-    publicKey: string,
-    signature: string
-  ): Promise<MoveCompatibleData> => {
-    const pyodide = await initializePyodide();
+  const compressForMove = useCallback(
+    async (
+      publicKey: string,
+      signature: string
+    ): Promise<MoveCompatibleData> => {
+      const pyodide = await initializePyodide();
 
-    setIsLoading(true);
-    setError(null);
+      setIsLoading(true);
+      setError(null);
 
-    try {
-      const pkData = JSON.parse(publicKey);
+      try {
+        const pkData = JSON.parse(publicKey);
 
-      pyodide.globals.set('pk_data_json', JSON.stringify(pkData));
-      pyodide.globals.set('sig_hex', signature);
+        pyodide.globals.set("pk_data_json", JSON.stringify(pkData));
+        pyodide.globals.set("sig_hex", signature);
 
-      const resultJson = pyodide.runPython(`
+        const resultJson = pyodide.runPython(`
         import json
         pk_data = json.loads(pk_data_json)
         result = compress_for_move(pk_data, sig_hex)
@@ -457,35 +504,99 @@ export const useFalcon = (options?: FalconInitOptions) => {
         json.dumps(result)
       `);
 
-      const compressed = JSON.parse(resultJson);
+        const compressed = JSON.parse(resultJson);
 
-      // Convert string values to BigInt to maintain precision for large integers
-      const pkCompactBigInt = compressed.pk_compact.map((val: string) => BigInt(val));
-      const s2CompactBigInt = compressed.s2_compact.map((val: string) => BigInt(val));
+        // Convert string values to BigInt to maintain precision for large integers
+        const pkCompactBigInt = compressed.pk_compact.map((val: string) =>
+          BigInt(val)
+        );
+        const s2CompactBigInt = compressed.s2_compact.map((val: string) =>
+          BigInt(val)
+        );
 
-      return {
-        pkCompact: pkCompactBigInt,
-        sigCompact: s2CompactBigInt,
-        salt: compressed.salt,
-        pkRaw: compressed.pk_raw,
-        s2Raw: compressed.s2_raw,
-        pkNttRaw: compressed.pk_ntt_raw
-      };
-    } catch (err) {
-      const errorMsg = err instanceof Error ? err.message : 'Failed to compress for Move';
-      setError(errorMsg);
-      throw err;
-    } finally {
-      setIsLoading(false);
-    }
-  }, [initializePyodide]);
+        return {
+          pkCompact: pkCompactBigInt,
+          sigCompact: s2CompactBigInt,
+          salt: compressed.salt,
+          pkRaw: compressed.pk_raw,
+          s2Raw: compressed.s2_raw,
+          pkNttRaw: compressed.pk_ntt_raw,
+        };
+      } catch (err) {
+        const errorMsg =
+          err instanceof Error ? err.message : "Failed to compress for Move";
+        setError(errorMsg);
+        throw err;
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [initializePyodide]
+  );
+
+  const compressPublicKey = useCallback(
+    async (
+      publicKey: string
+    ): Promise<{
+      pkCompact: bigint[];
+      pkRaw: number[];
+      pkNttRaw: number[];
+    }> => {
+      const pyodide = await initializePyodide();
+
+      setIsLoading(true);
+      setError(null);
+
+      try {
+        const pkData = JSON.parse(publicKey);
+
+        pyodide.globals.set("pk_data_json", JSON.stringify(pkData));
+
+        const resultJson = pyodide.runPython(`
+      import json
+      pk_data = json.loads(pk_data_json)
+      result = compress_publickey_for_move(pk_data)
+      if isinstance(result, str):
+          raise Exception(result)
+
+      json.dumps(result)
+    `);
+
+        const compressed = JSON.parse(resultJson);
+
+        // Convert string values to BigInt to maintain precision for large integers
+        const pkCompactBigInt = compressed.pk_compact.map((val: string) =>
+          BigInt(val)
+        );
+
+        return {
+          pkCompact: pkCompactBigInt,
+          pkRaw: compressed.pk_raw,
+          pkNttRaw: compressed.pk_ntt_raw,
+        };
+      } catch (err) {
+        const errorMsg =
+          err instanceof Error ? err.message : "Failed to compress public key";
+        setError(errorMsg);
+        throw err;
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [initializePyodide]
+  );
 
   // Auto-initialization effect
   useEffect(() => {
-    if (options?.autoInitialize && !isInitialized && !isLoading && !initializationPromiseRef.current) {
-      console.log('Auto-initializing Falcon...');
-      initializePyodide().catch(err => {
-        console.error('Auto-initialization failed:', err);
+    if (
+      options?.autoInitialize &&
+      !isInitialized &&
+      !isLoading &&
+      !initializationPromiseRef.current
+    ) {
+      console.log("Auto-initializing Falcon...");
+      initializePyodide().catch((err) => {
+        console.error("Auto-initialization failed:", err);
       });
     }
   }, [options?.autoInitialize, isInitialized, isLoading, initializePyodide]);
@@ -500,6 +611,7 @@ export const useFalcon = (options?: FalconInitOptions) => {
     signData,
     verifySignature,
     compressForMove,
-    initializePyodide
+    compressPublicKey,
+    initializePyodide,
   };
 };
