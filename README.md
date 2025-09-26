@@ -185,23 +185,27 @@ sui move test
 | **FALCON-512** | **✅ Resistant** | **Standardized** | **Future-proof** |
 | Ed25519 | ❌ Vulnerable | Current standard | Legacy compatibility |
 
-## 🔐 Hybrid Multi-Sig Wallet
+## 🔐 Hybrid Multi-Sig Wallet (Development Status)
 
-The core of Sui-Falcon is a hybrid multi-signature wallet that mandates both a traditional (Ed25519) and a quantum-resistant (FALCON-512) signature for every transaction, providing robust, dual-layer security.
+The Sui-Falcon project includes a hybrid multi-signature wallet concept that mandates both traditional (Ed25519) and quantum-resistant (FALCON-512) signatures for every transaction. **This component is currently under development** with integration challenges being resolved.
 
-### Features
+### Implementation Status
+
+⚠️ **Current Limitation**: The hybrid wallet contracts have integration issues with intent prefix signature verification, preventing full frontend integration. The project is currently focused on rigorous testing of the core FALCON-512 implementation.
+
+### Planned Features
 
   - **Dual-Key Security**: All transactions require signatures from both an Ed25519 key (managed by a standard Sui wallet) and a FALCON key.
   - **On-Chain Treasury**: Securely manage SUI and other assets within the wallet.
   - **Nonce-Based Replay Protection**: An incrementing nonce prevents transaction replay attacks.
   - **Global Wallet Registry**: A central registry maps user addresses to their hybrid wallets for easy discovery.
 
-### Smart Contract Logic
+### Smart Contract Architecture
 
-The `HybridWallet` stores the two public keys and enforces the dual-signature verification for all outgoing transactions.
+The `HybridWallet` design stores two public keys and enforces dual-signature verification:
 
 ```move
-// From hybrid_wallet.move
+// From hybrid_wallet.move (under development)
 public struct HybridWallet has key, store {
     id: UID,
     ed25519_pubkey: vector<u8>,    // Traditional public key
@@ -216,7 +220,7 @@ public struct HybridWallet has key, store {
 The React frontend abstracts the complexity of dual-signing into a simple user workflow.
 
 ```typescript
-// Example frontend logic for sending a payment
+// Planned frontend logic for hybrid wallet (future implementation)
 const sendPayment = async (recipient: string, amount: bigint) => {
   // 1. Prepare the transaction payload with the current nonce
   const txData = wallet.encodePayment(recipient, amount, nonce);
@@ -234,14 +238,35 @@ const sendPayment = async (recipient: string, amount: bigint) => {
 
 ## Frontend Web Application
 
-The React frontend provides a complete interface for managing the hybrid wallet.
+The React frontend currently features a FALCON signature testing interface while the hybrid wallet implementation is temporarily disabled for focused quantum cryptography testing.
 
-### Features
+### Current Status (Hackathon/Testing Phase)
 
-  - **Browser-Based Cryptography**: Generates FALCON keys, signs data, and prepares transactions directly in the browser using Pyodide, ensuring private keys never leave the user's machine.
-  - **Wallet Management**: Streamlines the creation of new hybrid wallets and the management of existing ones.
-  - **Dual-Signature Coordination**: Guides the user through the process of providing both Ed25519 and FALCON signatures.
-  - **Balance & History**: Displays the wallet's balance and transaction history.
+Due to integration challenges with the hybrid wallet's intent prefix signature verification, **the frontend currently shows only the FalconDemo component** for isolated testing of FALCON-512 quantum-safe signatures. This allows for focused testing and validation of the core cryptographic implementation.
+
+### FalconDemo Features
+
+  - **Browser-Based Cryptography**: Generates FALCON keys, signs data, and verifies signatures directly in the browser using Pyodide
+  - **Step-by-Step Testing Interface**: Guides through initialization, key generation, signing, verification, and Move contract preparation
+  - **Move Contract Integration**: Outputs data in the exact format required by the `falcon512.move` contract
+  - **Test Vector Validation**: Uses test vectors matching `test_browser_vector()` function in the Move contract
+  - **Console Integration**: Exposes compressed data to browser console for easy copying to Move tests
+
+### Frontend Architecture
+
+```typescript
+// Current App.tsx configuration (testing mode)
+function App() {
+  return <FalconDemo />; // Simplified for FALCON testing
+}
+
+// Standard configuration (temporarily commented)
+// return (
+//   <HybridWalletProvider>
+//     {!started ? <StartPage /> : <WalletPage />}
+//   </HybridWalletProvider>
+// );
+```
 
 ### Running the Frontend
 
@@ -249,8 +274,17 @@ The React frontend provides a complete interface for managing the hybrid wallet.
 cd fe
 npm install
 npm run dev
-# Access the application at http://localhost:5173
+# Access the FALCON testing interface at http://localhost:5173
 ```
+
+### Hybrid Wallet Implementation Notes
+
+The hybrid wallet frontend components remain available but are currently disabled due to:
+- Intent prefix signature verification issues in the smart contract
+- Focus on rigorous testing of FALCON-512 implementation before full integration
+- Need for community feedback on standardization as a new native wallet authenticator
+
+The full hybrid wallet interface will be re-enabled after resolving the signature verification integration.
 
 ## 📊 Key Specifications
 
