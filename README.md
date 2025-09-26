@@ -92,10 +92,10 @@ Generate a new FALCON key pair. Uses the `ethfalcon` variant with keccak256 hash
 
 #### 2\. Sign Data
 
-Create a digital signature for a piece of data using keccak256 hash function.
+Create a digital signature for a piece of hex data using keccak256 hash function.
 
 ```bash
-./sign_cli.py sign --privkey='private_key.pem' --data=<hexdata>
+./sign_cli.py sign --privkey='private_key.pem' --data=546869732069732061207472616e73616374696f6e
 # Creates signature file: sig
 ```
 
@@ -104,7 +104,7 @@ Create a digital signature for a piece of data using keccak256 hash function.
 Verify the signature off-chain using the Python implementation.
 
 ```bash
-./sign_cli.py verify --pubkey='public_key.pem' --data=<hexdata> --signature='sig'
+./sign_cli.py verify --pubkey='public_key.pem' --data=546869732069732061207472616e73616374696f6e --signature='sig'
 ```
 
 #### 4\. Verify Signature (On-chain on Sui)
@@ -114,7 +114,7 @@ Verify the signature on the Sui blockchain by calling the deployed smart contrac
 ```bash
 ./sign_cli.py verifyonsui \
   --pubkey='public_key.pem' \
-  --data=<hexdata> \
+  --data=546869732069732061207472616e73616374696f6e \
   --signature='sig' \
   --packageid='0x9a8703dc46ec28ac45098030a0dbfeffc7c30323bb69300f70a887fa5c9ef99c'
 ```
