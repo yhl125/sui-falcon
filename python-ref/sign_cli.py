@@ -248,9 +248,20 @@ def verify_signature_on_chain(pk, data, sig, contract_address, rpc, version):
 
 def verify_signature_on_sui(pk, data, sig, package_id, version):
     MSG = f'"0x{data.hex()}"'
-    SIG = f'"0x{sig.hex()}"'
 
     if version == 'ethfalcon' or version == 'falcon':
+        # Extract salt (first 40 bytes) and s2 part from signature like verify_signature_on_chain
+        salt = sig[HEAD_LEN:HEAD_LEN + SALT_LEN]
+        SALT = f'"0x{salt.hex()}"'
+
+        # Extract and compact s2 like verify_signature_on_chain does
+        enc_s = sig[HEAD_LEN + SALT_LEN:]
+        s2 = decompress(enc_s, 666 - HEAD_LEN - SALT_LEN, 512)
+        s2 = [elt % q for elt in s2]
+        s2_compact = falcon_compact(s2)
+        S2 = "[" + ",".join(f'"0x{elt:064x}"' for elt in s2_compact) + "]"
+
+        # Compact public key
         pk_compact = falcon_compact(Poly(pk.pk, q).ntt())
         PK = "[" + ",".join(f'"0x{elt:064x}"' for elt in pk_compact) + "]"
 
@@ -258,8 +269,8 @@ def verify_signature_on_sui(pk, data, sig, package_id, version):
             "sui", "client", "call",
             "--package", package_id,
             "--module", "falcon512",
-            "--function", "verify_signature_cli",
-            "--args", PK, MSG, SIG
+            "--function", "verify_signature_cli_u256",
+            "--args", PK, MSG, SALT, S2
         ]
 
         result = subprocess.run(

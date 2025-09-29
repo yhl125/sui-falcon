@@ -116,7 +116,7 @@ Verify the signature on the Sui blockchain by calling the deployed smart contrac
   --pubkey='public_key.pem' \
   --data=546869732069732061207472616e73616374696f6e \
   --signature='sig' \
-  --packageid='0x9a8703dc46ec28ac45098030a0dbfeffc7c30323bb69300f70a887fa5c9ef99c'
+  --packageid='0x486e1333c00af919329e6a5b232209f6fe1782e20b18e1443311ae2fbc3fdcaf'
 ```
 
 ## 🚀 Core Smart Contract: FALCON-512 On-Chain Verification
