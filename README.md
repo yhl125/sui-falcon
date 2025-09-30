@@ -126,7 +126,7 @@ Verify the signature on the Sui blockchain by calling the deployed smart contrac
 ### 📜 Contract Details
 
 **FALCON Verification Contract (Sui Testnet):**
-- **Package ID**: `0x9a8703dc46ec28ac45098030a0dbfeffc7c30323bb69300f70a887fa5c9ef99c`
+- **Package ID**: `0x486e1333c00af919329e6a5b232209f6fe1782e20b18e1443311ae2fbc3fdcaf`
 - **Module**: `falcon512`
 
 **Hybrid Wallet Contract (Sui Testnet):**
